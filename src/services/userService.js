@@ -5,17 +5,6 @@ export const getUsers = async () => {
   return response.data
 }
 export async function registerUser(payload) {
-  const response = await fetch("http://localhost:8080/api/auth/register", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  })
-
-  if (!response.ok) {
-    throw new Error("Failed to register user.")
-  }
-
-  return response.json()
+  const response = await api.post("/auth/register", payload)
+  return response.data
 }
