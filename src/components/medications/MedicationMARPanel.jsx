@@ -23,39 +23,34 @@ function MedicationMARPanel({ clientId }) {
 
   useEffect(() => {
     if (clientId) {
-      setFormData((prev) => ({
-        ...prev,
-        clientId,
-      }))
-
+      setFormData((prev) => ({ ...prev, clientId }))
       loadData()
     }
   }, [clientId])
 
-  const loadData = async () => {
+  async function loadData() {
     try {
       setLoading(true)
-
       const medicationData = await getClientMedications(clientId)
       const logData = await getClientMedicationLogs(clientId)
 
       setMedications(medicationData)
       setLogs(logData)
-    } catch (error) {
+    } catch {
       alert("Failed to load MAR data")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleChange = (e) => {
+  function handleChange(e) {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     })
   }
 
-  const handleCreateMedication = async (e) => {
+  async function handleCreateMedication(e) {
     e.preventDefault()
 
     try {
@@ -65,7 +60,6 @@ function MedicationMARPanel({ clientId }) {
       })
 
       setShowModal(false)
-
       setFormData({
         clientId,
         medicationName: "",
@@ -76,7 +70,7 @@ function MedicationMARPanel({ clientId }) {
       })
 
       await loadData()
-    } catch (error) {
+    } catch {
       alert("Failed to create medication")
     }
   }
@@ -131,103 +125,122 @@ function MedicationMARPanel({ clientId }) {
         <StatCard label="PRN Given" value={prnCount} />
       </div>
 
-      <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-xl font-bold text-slate-800">
-          Scheduled Medications
-        </h3>
-
+      <Section title="Scheduled Medications">
         {medications.length === 0 ? (
-          <p className="text-slate-500">No medications found for this client.</p>
+          <EmptyText text="No medications found for this client." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="border-b bg-slate-50">
-                <tr>
-                  <th className="p-4">Medication</th>
-                  <th className="p-4">Dosage</th>
-                  <th className="p-4">Frequency</th>
-                  <th className="p-4">Scheduled Time</th>
-                  <th className="p-4">Instructions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {medications.map((med) => (
-                  <tr key={med.id} className="border-b hover:bg-slate-50">
-                    <td className="p-4 font-semibold">
+          <div className="grid gap-4 md:grid-cols-2">
+            {medications.map((med) => (
+              <div
+                key={med.id}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="text-lg font-bold text-slate-900">
                       {med.medicationName}
-                    </td>
-                    <td className="p-4">{med.dosage}</td>
-                    <td className="p-4">{med.frequency}</td>
-                    <td className="p-4">{med.scheduledTime || "—"}</td>
-                    <td className="p-4">{med.instructions || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </h4>
+
+                    <p className="mt-1 font-semibold text-slate-700">
+                      {med.dosage}
+                    </p>
+                  </div>
+
+                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                    {med.frequency}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <InfoBox label="Scheduled Time" value={med.scheduledTime || "—"} />
+                  <InfoBox label="Status" value={med.active ? "Active" : "Inactive"} />
+                </div>
+
+                <div className="mt-4 rounded-xl bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Instructions
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">
+                    {med.instructions || "No instructions provided."}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-      </div>
+      </Section>
 
-      <div className="rounded-2xl bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-xl font-bold text-slate-800">MAR History</h3>
-
+      <Section title="MAR History">
         {logs.length === 0 ? (
-          <p className="text-slate-500">No MAR records found for this client.</p>
+          <EmptyText text="No MAR records found for this client." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="border-b bg-slate-50">
-                <tr>
-                  <th className="p-4">Medication</th>
-                  <th className="p-4">Caregiver</th>
-                  <th className="p-4">Given At</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Reason / Notes</th>
-                  <th className="p-4">Signature</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {logs.map((log) => (
-                  <tr key={log.id} className="border-b hover:bg-slate-50">
-                    <td className="p-4 font-semibold">
+          <div className="space-y-4">
+            {logs.map((log) => (
+              <div
+                key={log.id}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm"
+              >
+                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                  <div>
+                    <h4 className="text-lg font-bold text-slate-900">
                       {log.medicationName}
-                    </td>
+                    </h4>
 
-                    <td className="p-4">{log.caregiverName || "—"}</td>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Caregiver: {log.caregiverName || "—"}
+                    </p>
 
-                    <td className="p-4">
-                      {log.givenAt
-                        ? new Date(log.givenAt).toLocaleString()
-                        : "—"}
-                    </td>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Scheduled: {formatDate(log.scheduledAt)}
+                    </p>
 
-                    <td className="p-4">
-                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                        {formatStatus(log.status)}
-                      </span>
-                    </td>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Given At: {formatDate(log.givenAt)}
+                    </p>
+                  </div>
 
-                    <td className="p-4">
-                      {log.prnReason ||
-                        log.missedReason ||
-                        log.refusalReason ||
-                        log.notes ||
-                        "—"}
-                    </td>
+                  <StatusBadge status={log.status} />
+                </div>
 
-                    <td className="p-4">{log.caregiverSignature || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                <div className="mt-4 rounded-xl bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Reason / Notes
+                  </p>
+
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                    {log.prnReason ||
+                      log.missedReason ||
+                      log.refusalReason ||
+                      log.notes ||
+                      "—"}
+                  </p>
+                </div>
+
+                <div className="mt-4 rounded-xl bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Signature
+                  </p>
+
+                  {log.caregiverSignature?.startsWith("data:image") ? (
+                    <img
+                      src={log.caregiverSignature}
+                      alt="Caregiver signature"
+                      className="mt-3 h-20 max-w-56 rounded-xl border border-slate-200 bg-white p-2 object-contain"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-400">
+                      {log.caregiverSignature || "—"}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
-      </div>
+      </Section>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white p-8">
             <div className="mb-6 flex items-center justify-between">
               <h3 className="text-2xl font-bold">Add Medication</h3>
@@ -298,6 +311,15 @@ function MedicationMARPanel({ clientId }) {
   )
 }
 
+function Section({ title, children }) {
+  return (
+    <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
+      <h3 className="mb-4 text-xl font-bold text-slate-800">{title}</h3>
+      {children}
+    </div>
+  )
+}
+
 function StatCard({ label, value }) {
   return (
     <div className="rounded-2xl bg-white p-5 shadow-sm">
@@ -305,6 +327,42 @@ function StatCard({ label, value }) {
       <p className="mt-2 text-2xl font-bold text-slate-800">{value}</p>
     </div>
   )
+}
+
+function InfoBox({ label, value }) {
+  return (
+    <div className="rounded-xl bg-white p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+      <p className="mt-1 font-semibold text-slate-800">{value}</p>
+    </div>
+  )
+}
+
+function StatusBadge({ status }) {
+  const styles = {
+    ADMINISTERED: "bg-green-100 text-green-700",
+    GIVEN: "bg-green-100 text-green-700",
+    MISSED: "bg-red-100 text-red-700",
+    REFUSED: "bg-orange-100 text-orange-700",
+    HELD: "bg-slate-100 text-slate-700",
+    PRN_GIVEN: "bg-purple-100 text-purple-700",
+  }
+
+  return (
+    <span
+      className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
+        styles[status] || "bg-blue-100 text-blue-700"
+      }`}
+    >
+      {formatStatus(status)}
+    </span>
+  )
+}
+
+function EmptyText({ text }) {
+  return <p className="text-slate-500">{text}</p>
 }
 
 function formatStatus(status) {
@@ -315,7 +373,11 @@ function formatStatus(status) {
   if (status === "HELD") return "Held"
   if (status === "PRN_GIVEN") return "PRN Given"
 
-  return status
+  return status || "—"
+}
+
+function formatDate(value) {
+  return value ? new Date(value).toLocaleString() : "—"
 }
 
 export default MedicationMARPanel

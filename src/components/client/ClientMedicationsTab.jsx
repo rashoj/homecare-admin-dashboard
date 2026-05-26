@@ -19,6 +19,8 @@ function ClientMedicationsTab({ clientId }) {
 
   async function loadData() {
     try {
+      setLoading(true)
+
       const medicationData = await getClientMedications(clientId)
       const logData = await getClientMedicationLogs(clientId)
 
@@ -32,10 +34,12 @@ function ClientMedicationsTab({ clientId }) {
   }
 
   useEffect(() => {
-    loadData()
+    if (clientId) {
+      loadData()
+    }
   }, [clientId])
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault()
 
     if (!selectedMedication) {
@@ -90,8 +94,10 @@ function ClientMedicationsTab({ clientId }) {
       </h2>
 
       <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 p-4">
-          <h3 className="font-semibold text-gray-900">Scheduled Medications</h3>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="font-bold text-gray-900">
+            Scheduled Medications
+          </h3>
 
           {medications.length === 0 ? (
             <p className="mt-3 text-sm text-gray-500">
@@ -103,17 +109,17 @@ function ClientMedicationsTab({ clientId }) {
                 <button
                   key={med.id}
                   onClick={() => setSelectedMedication(med)}
-                  className={`w-full rounded-xl border p-4 text-left transition ${
+                  className={`w-full rounded-2xl border p-4 text-left transition ${
                     selectedMedication?.id === med.id
                       ? "border-blue-600 bg-blue-50"
                       : "border-gray-200 hover:bg-gray-50"
                   }`}
                 >
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-bold text-gray-900">
                     {med.medicationName}
                   </p>
 
-                  <p className="text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-gray-500">
                     {med.dosage} • {med.frequency}
                   </p>
 
@@ -121,7 +127,7 @@ function ClientMedicationsTab({ clientId }) {
                     Scheduled: {med.scheduledTime || "Not set"}
                   </p>
 
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-2 text-sm text-gray-600">
                     {med.instructions || "No instructions"}
                   </p>
                 </button>
@@ -130,13 +136,18 @@ function ClientMedicationsTab({ clientId }) {
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-200 p-4">
-          <h3 className="font-semibold text-gray-900">Log Medication Pass</h3>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="font-bold text-gray-900">
+            Log Medication Pass
+          </h3>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div>
-              <p className="text-sm text-gray-500">Selected Medication</p>
-              <p className="mt-1 font-semibold text-gray-900">
+            <div className="rounded-xl bg-slate-50 p-4">
+              <p className="text-sm text-gray-500">
+                Selected Medication
+              </p>
+
+              <p className="mt-1 font-bold text-gray-900">
                 {selectedMedication
                   ? selectedMedication.medicationName
                   : "None selected"}
@@ -152,6 +163,7 @@ function ClientMedicationsTab({ clientId }) {
               className="w-full rounded-xl border border-gray-300 px-4 py-3"
             >
               <option value="ADMINISTERED">Administered</option>
+              <option value="GIVEN">Given</option>
               <option value="MISSED">Missed</option>
               <option value="REFUSED">Refused</option>
               <option value="HELD">Held</option>
@@ -195,65 +207,77 @@ function ClientMedicationsTab({ clientId }) {
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 p-4">
-        <h3 className="font-semibold text-gray-900">MAR History</h3>
+      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h3 className="text-xl font-bold text-gray-900">MAR History</h3>
 
         {logs.length === 0 ? (
           <p className="mt-3 text-sm text-gray-500">
             No medication logs found for this client.
           </p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b text-gray-500">
-                  <th className="py-3">Medication</th>
-                  <th className="py-3">Caregiver</th>
-                  <th className="py-3">Given At</th>
-                  <th className="py-3">Status</th>
-                  <th className="py-3">Reason</th>
-                  <th className="py-3">Signature</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {logs.map((log) => (
-                  <tr key={log.id} className="border-b last:border-0">
-                    <td className="py-4 font-medium text-gray-900">
+          <div className="mt-5 space-y-4">
+            {logs.map((log) => (
+              <div
+                key={log.id}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm"
+              >
+                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                  <div>
+                    <h4 className="text-lg font-bold text-slate-900">
                       {log.medicationName}
-                    </td>
+                    </h4>
 
-                    <td className="py-4 text-gray-700">
-                      {log.caregiverName || "—"}
-                    </td>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Caregiver: {log.caregiverName || "—"}
+                    </p>
 
-                    <td className="py-4 text-gray-700">
-                      {log.givenAt
-                        ? new Date(log.givenAt).toLocaleString()
-                        : "—"}
-                    </td>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Scheduled: {formatDate(log.scheduledAt)}
+                    </p>
 
-                    <td className="py-4">
-                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                        {formatStatus(log.status)}
-                      </span>
-                    </td>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Given At: {formatDate(log.givenAt)}
+                    </p>
+                  </div>
 
-                    <td className="py-4 text-gray-700">
-                      {log.prnReason ||
-                        log.missedReason ||
-                        log.refusalReason ||
-                        log.notes ||
-                        "—"}
-                    </td>
+                  <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                    {formatStatus(log.status)}
+                  </span>
+                </div>
 
-                    <td className="py-4 text-gray-700">
+                <div className="mt-4 rounded-xl bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Reason / Notes
+                  </p>
+
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                    {log.prnReason ||
+                      log.missedReason ||
+                      log.refusalReason ||
+                      log.notes ||
+                      "—"}
+                  </p>
+                </div>
+
+                <div className="mt-4 rounded-xl bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Signature
+                  </p>
+
+                  {log.caregiverSignature?.startsWith("data:image") ? (
+                    <img
+                      src={log.caregiverSignature}
+                      alt="Caregiver signature"
+                      className="mt-3 h-20 max-w-56 rounded-xl border border-slate-200 bg-white p-2 object-contain"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-400">
                       {log.caregiverSignature || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -263,12 +287,17 @@ function ClientMedicationsTab({ clientId }) {
 
 function formatStatus(status) {
   if (status === "ADMINISTERED") return "Administered"
+  if (status === "GIVEN") return "Given"
   if (status === "MISSED") return "Missed"
   if (status === "REFUSED") return "Refused"
   if (status === "HELD") return "Held"
   if (status === "PRN_GIVEN") return "PRN Given"
 
-  return status
+  return status || "—"
+}
+
+function formatDate(value) {
+  return value ? new Date(value).toLocaleString() : "—"
 }
 
 export default ClientMedicationsTab

@@ -6,6 +6,7 @@ import {
   getMissedMedicationAlerts,
   getMissingVisitNoteAlerts,
 } from "../services/complianceApi"
+import { getMARComplianceSummary } from "../services/medicationService"
 
 function CompliancePage() {
   const navigate = useNavigate()
@@ -16,6 +17,7 @@ function CompliancePage() {
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
   const [missingVisitNoteAlerts, setMissingVisitNoteAlerts] = useState([])
+  const [marSummary, setMarSummary] = useState(null)
 
   useEffect(() => {
     async function loadCompliance() {
@@ -24,6 +26,8 @@ function CompliancePage() {
         const clientData = await getClientComplianceRows()
         const missedMedicationData = await getMissedMedicationAlerts()
         const missingVisitNoteData = await getMissingVisitNoteAlerts()
+        const marData = await getMARComplianceSummary()
+        setMarSummary(marData)
 
 
         setSummary(summaryData)
@@ -81,6 +85,20 @@ function CompliancePage() {
           value={summary?.incidentsReported || 0}
         />
       </div>
+      <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
+  <h3 className="mb-4 text-xl font-bold text-slate-800">
+    MAR Compliance Summary
+  </h3>
+
+  <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+    <SummaryCard label="MAR Rate" value={`${marSummary?.marComplianceRate || 0}%`} />
+    <SummaryCard label="Administered" value={marSummary?.administeredCount || 0} />
+    <SummaryCard label="Missed" value={marSummary?.missedCount || 0} />
+    <SummaryCard label="Refused" value={marSummary?.refusedCount || 0} />
+    <SummaryCard label="Overdue" value={marSummary?.overdueCount || 0} />
+    <SummaryCard label="PRN Given" value={marSummary?.prnGivenCount || 0} />
+  </div>
+</div>
 
       <div className="rounded-2xl bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-xl font-bold text-slate-800">

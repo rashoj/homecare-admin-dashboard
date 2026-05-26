@@ -28,6 +28,9 @@ import IncidentsPage from "./pages/IncidentsPage"
 import ClientRiskPage from "./pages/ClientRiskPage"
 import AuthorizationsPage from "./pages/AuthorizationsPage"
 import BillingPayrollPage from "./pages/BillingPayrollPage"
+import EVVExceptionsPage from "./pages/EVVExceptionsPage"
+import EVVAlertsPage from "./pages/EVVAlertsPage"
+import MARReviewPage from "./pages/MRReviewPage"
 
 import AdminLayout from "./components/AdminLayout"
 
@@ -74,6 +77,7 @@ function App() {
   element={<CompliancePage />}
 />
                <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
+               <Route path="/evv-alerts" element={<EVVAlertsPage />} />
 
                 <Route
                   path="/caregivers"
@@ -91,7 +95,15 @@ function App() {
                   element={<CaregiverDetailsPage />}
                 />
                 <Route path="/client-risk" element={<ClientRiskPage />} />
-
+  <Route
+  path="/mar-review"
+  element={<MARReviewPage />}
+/>
+                
+<Route
+  path="/evv-exceptions"
+  element={<EVVExceptionsPage />}
+/>
                 <Route
                   path="/appointments"
                   element={<AppointmentsPage />}

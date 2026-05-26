@@ -13,6 +13,7 @@ function BillingPayrollPage() {
     payrollStatus: "PENDING",
     billingStatus: "PENDING",
     billable: false,
+    authorizationOverrideReason: "",
     notes: "",
   })
 
@@ -40,6 +41,8 @@ function BillingPayrollPage() {
       payrollStatus: timesheet.payrollStatus || "PENDING",
       billingStatus: timesheet.billingStatus || "PENDING",
       billable: Boolean(timesheet.billable),
+       authorizationOverrideReason:
+    timesheet.authorizationOverrideReason || "",
       notes: timesheet.notes || "",
     })
   }
@@ -66,8 +69,13 @@ function BillingPayrollPage() {
         billingRate: Number(reviewData.billingRate),
         payrollStatus: reviewData.payrollStatus,
         billingStatus: reviewData.billingStatus,
-        billable: reviewData.billable,
-        notes: reviewData.notes,
+       billable: reviewData.billable,
+authorizationOverride:
+  selectedTimesheet.authorizationValid === false &&
+  reviewData.billable,
+authorizationOverrideReason:
+  reviewData.authorizationOverrideReason,
+notes: reviewData.notes,
       })
 
       await loadTimesheets()
@@ -259,7 +267,8 @@ function BillingPayrollPage() {
                   onChange={handleChange}
                   className="w-full rounded-xl border border-slate-300 px-4 py-3"
                 >
-                  <option value="PENDING">Billing Pending</option>
+                  <option value="NEEDS_REVIEW">Needs Review</option>
+                   <option value="PENDING">Billing Pending</option>
                   <option value="APPROVED">Billing Approved</option>
                   <option value="BILLED">Billed</option>
                   <option value="DENIED">Denied</option>
@@ -277,7 +286,20 @@ function BillingPayrollPage() {
                 <span className="text-sm font-semibold text-blue-700">
                   Mark this timesheet as billable
                 </span>
+                {selectedTimesheet.authorizationValid === false &&
+  reviewData.billable && (
+    <textarea
+      name="authorizationOverrideReason"
+      value={reviewData.authorizationOverrideReason}
+      onChange={handleChange}
+      placeholder="Required authorization override reason"
+      rows="3"
+      className="w-full rounded-xl border border-red-300 px-4 py-3"
+      required
+    />
+)}
               </label>
+
 
               <textarea
                 name="notes"
@@ -339,6 +361,14 @@ function FlagBadge({ ok }) {
 }
 
 function StatusBadge({ status }) {
+  if (status === "NEEDS_REVIEW") {
+    return (
+      <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+        Needs Review
+      </span>
+    )
+  }
+
   if (status === "APPROVED" || status === "PAID" || status === "BILLED") {
     return (
       <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">

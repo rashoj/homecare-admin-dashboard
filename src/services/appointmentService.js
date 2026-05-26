@@ -20,3 +20,9 @@ export const updateAppointmentStatus = async (id, payload) => {
 
   return response.data
 }
+
+
+export async function getAppointmentById(id) {
+  const response = await api.get(`/appointments/${id}`)
+  return response.data
+}

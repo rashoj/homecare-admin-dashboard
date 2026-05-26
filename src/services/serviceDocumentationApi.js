@@ -83,6 +83,25 @@ export async function submitServiceDocumentation(payload) {
   return response.json()
 }
 
+export async function getServiceDocumentationAuditLogs(id) {
+  const token = getToken()
+
+  const response = await fetch(
+    `${API_BASE_URL}/service-documentation/${id}/audit-logs`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to load documentation audit logs.")
+  }
+
+  return response.json()
+}
+
 export async function downloadServiceDocumentationPdf(id) {
   const token = getToken()
 

@@ -8,6 +8,9 @@ import ClientAppointmentsTab from "../components/client/ClientAppointmentsTab"
 import ClientVisitNotesTab from "../components/client/ClientVisitNotesTab"
 import MedicationMARPanel from "../components/medications/MedicationMARPanel"
 import ClientRiskSafetyTab from "../components/client/ClientRiskSafetyTab"
+import ClientISPGoalsTab from "../components/client/ClientISPGoalsTab"
+//import ClientBehaviorTrackingTab from "../components/client/ClientBehaviorTrackingTab"
+import ClientBehaviorIncidentCardsTab from "../components/client/ClientBehaviorIncidentCardsTab"
 
 function ClientDetailsPage() {
   const { clientId } = useParams()
@@ -24,6 +27,8 @@ function ClientDetailsPage() {
     { id: "visitNotes", label: "Visit Notes" },
     { id: "medications", label: "Medications" },
     { id: "risk", label: "Risk & Safety" },
+    { id: "ispGoals", label: "ISP / Goals" },
+    { id: "behavior", label: "Behavior Tracking" },
     { id: "documents", label: "Documents" },
     { id: "billing", label: "Billing" },
     { id: "caregivers", label: "Caregivers" },
@@ -185,6 +190,14 @@ function ClientDetailsPage() {
           <ClientRiskSafetyTab clientId={clientId} />
         )}
 
+    {activeTab === "behavior" && (
+  <ClientBehaviorIncidentCardsTab clientId={clientId} />
+)}
+
+        {activeTab === "ispGoals" && (
+          <ClientISPGoalsTab clientId={clientId} />
+        )}
+
         {activeTab === "documents" && (
           <TabPlaceholder title="Documents" clientId={clientId} />
         )}
@@ -196,6 +209,7 @@ function ClientDetailsPage() {
         {activeTab === "caregivers" && (
           <ClientCaregiversTab clientId={clientId} />
         )}
+        
       </div>
     </div>
   )

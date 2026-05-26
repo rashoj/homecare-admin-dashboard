@@ -1,11 +1,11 @@
 import api from "../api/axios"
 
-export const getClients = async () => {
+export async function getClients() {
   const response = await api.get("/clients")
   return response.data
 }
 
-export const createClient = async (clientData) => {
-  const response = await api.post("/clients", clientData)
+export async function createClient(payload) {
+  const response = await api.post("/clients", payload)
   return response.data
 }

@@ -11,7 +11,7 @@ import {
 } from "../services/caregiverAuthStorage"
 import { evvSettings } from "../data/settingsData"
 import { calculateDistanceInFeet } from "../utils/gpsUtils"
-import CaregiverEMARSection from "../components/caregiver/CaregiverEMARSection"
+import CaregiverMARPanel from "../components/caregiver/CaregiverMARPanel"
 import CaregiverVisitNoteForm from "../components/caregiver/CaregiverVisitNoteForm"
 import CaregiverServiceDocumentationForm from "../components/caregiver/CaregiverServiceDocumentationForm"
 import CaregiverIncidentForm from "../components/caregiver/CaregiverIncidentForm"
@@ -317,8 +317,10 @@ function CaregiverPortalPage() {
           </div>
         </div>
 
-        <CaregiverEMARSection client={client} caregiver={caregiver} />
-
+<CaregiverMARPanel
+  clientId={client.id}
+  caregiverId={caregiver.id}
+/>
         <CaregiverVisitNoteForm
           appointmentId={todayAssignment.appointmentId}
           canSubmit={appointmentCompleted}

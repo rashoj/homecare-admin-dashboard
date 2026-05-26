@@ -108,6 +108,21 @@ function AdminLayout({ children }) {
               icon={<Calendar size={20} />}
               text="Calendar"
             />
+           <SidebarLink
+  to="/evv-exceptions"
+  icon={<AlertTriangle size={20} />}
+  text="EVV Exceptions"
+/>
+<SidebarLink
+  to="/evv-alerts"
+  icon={<Bell size={20} />}
+  text="EVV Alerts"
+/>
+<SidebarLink
+  to="/mar-review"
+  icon={<FileCheck size={20} />}
+  text="MAR Review"
+/>
 
             <SidebarLink
               to="/reports"
