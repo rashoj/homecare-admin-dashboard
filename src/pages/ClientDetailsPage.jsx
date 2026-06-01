@@ -9,8 +9,9 @@ import ClientVisitNotesTab from "../components/client/ClientVisitNotesTab"
 import MedicationMARPanel from "../components/medications/MedicationMARPanel"
 import ClientRiskSafetyTab from "../components/client/ClientRiskSafetyTab"
 import ClientISPGoalsTab from "../components/client/ClientISPGoalsTab"
-//import ClientBehaviorTrackingTab from "../components/client/ClientBehaviorTrackingTab"
 import ClientBehaviorIncidentCardsTab from "../components/client/ClientBehaviorIncidentCardsTab"
+import ClientBillingTab from "../components/client/ClientBillingTab"
+import ClientDocumentsTab from "../components/client/ClientDocumentsTab"
 
 function ClientDetailsPage() {
   const { clientId } = useParams()
@@ -37,16 +38,21 @@ function ClientDetailsPage() {
   useEffect(() => {
     async function loadClient() {
       try {
+        setLoading(true)
+        setErrorMessage("")
+
         const data = await getClientById(clientId)
         setClient(data)
       } catch (error) {
-        setErrorMessage(error.message)
+        setErrorMessage(error.message || "Failed to load client.")
       } finally {
         setLoading(false)
       }
     }
 
-    loadClient()
+    if (clientId) {
+      loadClient()
+    }
   }, [clientId])
 
   if (loading) {
@@ -190,26 +196,25 @@ function ClientDetailsPage() {
           <ClientRiskSafetyTab clientId={clientId} />
         )}
 
-    {activeTab === "behavior" && (
-  <ClientBehaviorIncidentCardsTab clientId={clientId} />
-)}
-
         {activeTab === "ispGoals" && (
           <ClientISPGoalsTab clientId={clientId} />
         )}
 
-        {activeTab === "documents" && (
-          <TabPlaceholder title="Documents" clientId={clientId} />
+        {activeTab === "behavior" && (
+          <ClientBehaviorIncidentCardsTab clientId={clientId} />
         )}
 
+       {activeTab === "documents" && (
+  <ClientDocumentsTab clientId={clientId} />
+)}
+
         {activeTab === "billing" && (
-          <TabPlaceholder title="Billing" clientId={clientId} />
+          <ClientBillingTab clientId={clientId} />
         )}
 
         {activeTab === "caregivers" && (
           <ClientCaregiversTab clientId={clientId} />
         )}
-        
       </div>
     </div>
   )

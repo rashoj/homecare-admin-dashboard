@@ -50,30 +50,46 @@ function MedicationMARPanel({ clientId }) {
     })
   }
 
-  async function handleCreateMedication(e) {
-    e.preventDefault()
+ async function handleCreateMedication(e) {
+  e.preventDefault()
 
-    try {
-      await createMedication({
-        ...formData,
-        clientId,
-      })
+  try {
+    const savedUser = localStorage.getItem("homecare_user")
+    const user = savedUser ? JSON.parse(savedUser) : null
 
-      setShowModal(false)
-      setFormData({
-        clientId,
-        medicationName: "",
-        dosage: "",
-        frequency: "",
-        scheduledTime: "",
-        instructions: "",
-      })
-
-      await loadData()
-    } catch {
-      alert("Failed to create medication")
+    const payload = {
+      clientId: Number(clientId),
+      medicationName: formData.medicationName,
+      dosage: formData.dosage,
+      frequency: formData.frequency,
+      scheduledTime: formData.scheduledTime
+        ? `${formData.scheduledTime}:00`
+        : null,
+      instructions: formData.instructions,
+      actorUserId: user?.id,
     }
+
+    console.log("MEDICATION PAYLOAD", payload)
+
+    await createMedication(payload)
+
+    setShowModal(false)
+
+    setFormData({
+      clientId,
+      medicationName: "",
+      dosage: "",
+      frequency: "",
+      scheduledTime: "",
+      instructions: "",
+    })
+
+    await loadData()
+  } catch (error) {
+    console.error(error)
+    alert("Failed to create medication")
   }
+}
 
   const administeredCount = logs.filter(
     (log) => log.status === "ADMINISTERED" || log.status === "GIVEN"

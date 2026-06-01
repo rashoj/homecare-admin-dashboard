@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
 import HomePage from "./pages/HomePage"
 import LoginPage from "./pages/LoginPage"
@@ -27,8 +27,13 @@ import BillingPayrollPage from "./pages/BillingPayrollPage"
 import EVVExceptionsPage from "./pages/EVVExceptionsPage"
 import EVVAlertsPage from "./pages/EVVAlertsPage"
 import MARReviewPage from "./pages/MARReviewPage"
+import FamilyLoginPage from "./pages/FamilyLoginPage"
+import FamilyPortalPage from "./pages/FamilyPortalPage"
+import MessagesPage from "./pages/MessagesPage"
+
 
 import AdminLayout from "./components/AdminLayout"
+
 
 function App() {
   const [user, setUser] = useState(null)
@@ -38,9 +43,45 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/admin-login" element={<LoginPage onLogin={setUser} />} />
-          <Route path="/caregiver-login" element={<CaregiverLoginPage />} />
+
+          <Route
+            path="/admin-login"
+            element={<LoginPage onLogin={setUser} />}
+          />
+
+          <Route
+            path="/caregiver-login"
+            element={<CaregiverLoginPage />}
+          />
+
+          <Route
+            path="/family-login"
+            element={<FamilyLoginPage onLogin={setUser} />}
+          />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    )
+  }
+
+  if (user.role === "FAMILY_MEMBER") {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/family-portal" element={<FamilyPortalPage />} />
+          <Route path="*" element={<Navigate to="/family-portal" replace />} />
+        </Routes>
+      </BrowserRouter>
+    )
+  }
+
+  if (user.role === "CAREGIVER") {
+    return (
+      <BrowserRouter>
+        <Routes>
           <Route path="/caregiver" element={<CaregiverPortalPage />} />
+          <Route path="*" element={<Navigate to="/caregiver" replace />} />
         </Routes>
       </BrowserRouter>
     )
@@ -49,8 +90,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/caregiver" element={<CaregiverPortalPage />} />
-
         <Route
           path="/*"
           element={
@@ -61,7 +100,6 @@ function App() {
                 <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
                 <Route path="/caregivers" element={<CaregiversPage />} />
                 <Route path="/caregivers/:id" element={<CaregiverDetailsPage />} />
-                <Route path="/caregiver-portal" element={<CaregiverPortalPage />} />
                 <Route path="/appointments" element={<AppointmentsPage />} />
                 <Route path="/documents" element={<DocumentsPage />} />
                 <Route path="/medications" element={<MedicationsPage />} />
@@ -73,7 +111,11 @@ function App() {
                 <Route path="/billing-payroll" element={<BillingPayrollPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/compliance" element={<CompliancePage />} />
-                <Route path="/service-documentation-review" element={<ServiceDocumentationReviewPage />} />
+                <Route path="/messages" element={<MessagesPage />} />
+                <Route
+                  path="/service-documentation-review"
+                  element={<ServiceDocumentationReviewPage />}
+                />
                 <Route path="/incidents" element={<IncidentsPage />} />
                 <Route path="/client-risk" element={<ClientRiskPage />} />
                 <Route path="/authorizations" element={<AuthorizationsPage />} />

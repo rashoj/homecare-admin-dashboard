@@ -1,305 +1,449 @@
 import { useEffect, useState } from "react"
-
 import {
   Upload,
   Download,
   Search,
-  X
+  X,
+  Check,
+  Ban,
+  FileText,
+  Clock,
+  ShieldCheck,
+  CircleX,
 } from "lucide-react"
 
 import {
   getDocuments,
   uploadDocument,
-  downloadDocument
+  downloadDocument,
 } from "../services/documentService"
 
 import { getClients } from "../services/clientService"
 
 function DocumentsPage() {
-
   const [documents, setDocuments] = useState([])
-
   const [clients, setClients] = useState([])
-
   const [search, setSearch] = useState("")
-
+  const [statusFilter, setStatusFilter] = useState("ALL")
+  const [sourceFilter, setSourceFilter] = useState("ALL")
   const [showModal, setShowModal] = useState(false)
+  const [selectedFile, setSelectedFile] = useState(null)
 
   const [formData, setFormData] = useState({
     clientId: "",
     documentName: "",
     documentType: "",
-    expirationDate: ""
+    expirationDate: "",
   })
-
-  const [selectedFile, setSelectedFile] = useState(null)
 
   useEffect(() => {
     loadData()
   }, [])
 
-  const loadData = async () => {
-
+  async function loadData() {
     try {
-
       const documentData = await getDocuments()
-
       const clientData = await getClients()
 
       setDocuments(documentData)
-
       setClients(clientData)
-
     } catch (error) {
-
       console.error(error)
-
-      alert("Failed to load documents")
+      alert("Failed to load documents.")
     }
   }
 
-  const handleChange = (e) => {
+  function getAdminUserId() {
+    const savedUser = localStorage.getItem("homecare_user")
+    const user = savedUser ? JSON.parse(savedUser) : null
+    return user?.id || 1
+  }
 
+  function handleChange(e) {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     })
   }
 
-  const handleUpload = async (e) => {
 
-    e.preventDefault()
+ async function handleUpload(e) {
+  e.preventDefault()
 
-    try {
+  if (!selectedFile) {
+    alert("Please select a file.")
+    return
+  }
 
-      const uploadData = new FormData()
+  try {
+    const actorUserId = getAdminUserId()
 
-      uploadData.append("file", selectedFile)
+    const uploadData = new FormData()
+    uploadData.append("file", selectedFile)
+    uploadData.append("uploadedByUserId", actorUserId)
+    uploadData.append("clientId", formData.clientId)
+    uploadData.append("documentName", formData.documentName)
+    uploadData.append("documentType", formData.documentType)
 
-      uploadData.append("clientId", formData.clientId)
-
-      uploadData.append("documentName", formData.documentName)
-
-      uploadData.append("documentType", formData.documentType)
-
+    if (formData.expirationDate) {
       uploadData.append("expirationDate", formData.expirationDate)
+    }
 
-      await uploadDocument(uploadData)
+    await uploadDocument(uploadData)
 
-      setShowModal(false)
+    setShowModal(false)
+    setSelectedFile(null)
+    setFormData({
+      clientId: "",
+      documentName: "",
+      documentType: "",
+      expirationDate: "",
+    })
 
-      setSelectedFile(null)
+    await loadData()
+  } catch (error) {
+    console.error(error)
+    alert("Failed to upload document.")
+  }
 
-      setFormData({
-        clientId: "",
-        documentName: "",
-        documentType: "",
-        expirationDate: ""
-      })
+  
+  }
+  async function approveDocument(documentId) {
+    try {
+      const actorUserId = getAdminUserId()
+      const token = localStorage.getItem("homecare_auth_token")
 
-      loadData()
+      const response = await fetch(
+        `http://localhost:8080/api/documents/${documentId}/approve?actorUserId=${actorUserId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
 
+      if (!response.ok) {
+        throw new Error("Failed to approve document.")
+      }
+
+      await loadData()
     } catch (error) {
-
       console.error(error)
-
-      alert("Failed to upload document")
+      alert(error.message || "Failed to approve document.")
     }
   }
 
-  const filteredDocuments = documents.filter((document) =>
-    document.documentName?.toLowerCase().includes(search.toLowerCase())
-  )
+  async function rejectDocument(documentId) {
+    const reason = window.prompt("Enter rejection reason:")
+
+    if (!reason || !reason.trim()) {
+      return
+    }
+
+    try {
+      const actorUserId = getAdminUserId()
+      const token = localStorage.getItem("homecare_auth_token")
+
+      const response = await fetch(
+        `http://localhost:8080/api/documents/${documentId}/reject?reason=${encodeURIComponent(
+          reason
+        )}&actorUserId=${actorUserId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Failed to reject document.")
+      }
+
+      await loadData()
+    } catch (error) {
+      console.error(error)
+      alert(error.message || "Failed to reject document.")
+    }
+  }
+
+  const totalCount = documents.length
+  const pendingCount = documents.filter((doc) => doc.approvalStatus === "PENDING").length
+  const approvedCount = documents.filter((doc) => doc.approvalStatus === "APPROVED").length
+  const rejectedCount = documents.filter((doc) => doc.approvalStatus === "REJECTED").length
+
+  const filteredDocuments = documents.filter((document) => {
+    const keyword = search.toLowerCase()
+
+    const matchesSearch =
+      document.documentName?.toLowerCase().includes(keyword) ||
+      document.clientName?.toLowerCase().includes(keyword) ||
+      document.documentType?.toLowerCase().includes(keyword) ||
+      document.approvalStatus?.toLowerCase().includes(keyword) ||
+      document.uploadedByName?.toLowerCase().includes(keyword)
+
+    const matchesStatus =
+      statusFilter === "ALL" || document.approvalStatus === statusFilter
+
+    const uploadedBy = document.uploadedByName || ""
+
+    const matchesSource =
+      sourceFilter === "ALL" ||
+      (sourceFilter === "FAMILY" && uploadedBy.toLowerCase().includes("family")) ||
+      (sourceFilter === "AGENCY" && !uploadedBy.toLowerCase().includes("family"))
+
+    return matchesSearch && matchesStatus && matchesSource
+  })
 
   return (
     <div>
-
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-
+      <div className="mb-8 flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
         <div>
-
-          <h2 className="text-4xl font-bold text-slate-800">
-            Documents
-          </h2>
-
-          <p className="text-slate-500 mt-2">
-            Manage certifications and compliance documents.
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-blue-600">
+            Compliance Center
           </p>
 
+          <h2 className="mt-2 text-4xl font-black text-slate-900">
+            Document Management
+          </h2>
+
+          <p className="mt-2 text-slate-500">
+            Review, approve, reject, and manage agency, client, and family-uploaded documents.
+          </p>
         </div>
 
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-xl hover:bg-blue-700 transition"
+          className="flex w-fit items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700"
         >
-
           <Upload size={18} />
-
           Upload Document
-
         </button>
-
       </div>
 
-      {/* Search */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+      <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <StatsCard
+          title="Total Documents"
+          value={totalCount}
+          icon={<FileText size={22} />}
+          color="bg-blue-50 text-blue-700"
+        />
 
-        <div className="flex items-center gap-3 border border-slate-200 rounded-xl px-4 py-3">
+        <StatsCard
+          title="Pending Review"
+          value={pendingCount}
+          icon={<Clock size={22} />}
+          color="bg-yellow-50 text-yellow-700"
+        />
 
-          <Search size={20} className="text-slate-400" />
+        <StatsCard
+          title="Approved"
+          value={approvedCount}
+          icon={<ShieldCheck size={22} />}
+          color="bg-green-50 text-green-700"
+        />
 
-          <input
-            className="w-full outline-none"
-            placeholder="Search documents..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <StatsCard
+          title="Rejected"
+          value={rejectedCount}
+          icon={<CircleX size={22} />}
+          color="bg-red-50 text-red-700"
+        />
+      </div>
 
+      <div className="mb-6 rounded-3xl bg-white p-6 shadow-sm">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 xl:col-span-1">
+            <Search size={20} className="text-slate-400" />
+
+            <input
+              className="w-full outline-none"
+              placeholder="Search documents..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-2xl border border-slate-200 px-4 py-3 outline-none"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+
+          <select
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+            className="rounded-2xl border border-slate-200 px-4 py-3 outline-none"
+          >
+            <option value="ALL">All Upload Sources</option>
+            <option value="FAMILY">Family Uploads</option>
+            <option value="AGENCY">Agency/Admin Uploads</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-3xl bg-white shadow-sm">
+        <div className="border-b border-slate-100 px-6 py-5">
+          <h3 className="text-xl font-bold text-slate-900">
+            Document Queue
+          </h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Pending family uploads can be approved or rejected by admin.
+          </p>
         </div>
 
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-
-        <table className="w-full text-left">
-
-          <thead className="bg-slate-50 border-b">
-
-            <tr>
-
-              <th className="p-4">Document</th>
-
-              <th className="p-4">Client</th>
-
-              <th className="p-4">Type</th>
-
-              <th className="p-4">Expiration</th>
-
-              <th className="p-4">Status</th>
-
-              <th className="p-4">Action</th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {filteredDocuments.map((document) => (
-
-              <tr
-                key={document.id}
-                className="border-b hover:bg-slate-50"
-              >
-
-                <td className="p-4 font-medium">
-                  {document.documentName}
-                </td>
-
-                <td className="p-4">
-                  {document.clientName}
-                </td>
-
-                <td className="p-4">
-                  {document.documentType}
-                </td>
-
-                <td className="p-4">
-                  {document.expirationDate}
-                </td>
-
-                <td className="p-4">
-
-                  <span className={`px-3 py-1 rounded-full text-sm ${
-                    document.approvalStatus === "APPROVED"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700"
-                  }`}>
-
-                    {document.approvalStatus}
-
-                  </span>
-
-                </td>
-
-                <td className="p-4">
-
-                  <button
-                    onClick={() => downloadDocument(document.id, document.fileName)}
-                    className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition"
-                  >
-
-                    <Download size={16} />
-
-                    Download
-
-                  </button>
-
-                </td>
-
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1050px] text-left">
+            <thead className="bg-slate-50 text-sm text-slate-500">
+              <tr>
+                <th className="px-6 py-4">Document</th>
+                <th className="px-6 py-4">Client</th>
+                <th className="px-6 py-4">Uploaded By</th>
+                <th className="px-6 py-4">Type</th>
+                <th className="px-6 py-4">Expiration</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Actions</th>
               </tr>
+            </thead>
 
-            ))}
+            <tbody>
+              {filteredDocuments.map((document) => (
+                <tr key={document.id} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td className="px-6 py-5">
+                    <p className="font-bold text-slate-900">
+                      {document.documentName || "Untitled Document"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {document.fileName || "No file name"}
+                    </p>
+                  </td>
 
-          </tbody>
+                  <td className="px-6 py-5 text-slate-700">
+                    {document.clientName || "—"}
+                  </td>
 
-        </table>
+                  <td className="px-6 py-5 text-slate-700">
+                    {document.uploadedByName || "—"}
+                  </td>
 
+                  <td className="px-6 py-5 text-slate-700">
+                    {document.documentType || "—"}
+                  </td>
+
+                  <td className="px-6 py-5 text-slate-700">
+                    {document.expirationDate || "—"}
+                  </td>
+
+                  <td className="px-6 py-5">
+                    <StatusBadge status={document.approvalStatus} />
+                  </td>
+
+                  <td className="px-6 py-5">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => downloadDocument(document.id, document.fileName)}
+                        className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Download size={15} />
+                          Download
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => approveDocument(document.id)}
+                        disabled={document.approvalStatus === "APPROVED"}
+                        className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                          document.approvalStatus === "APPROVED"
+                            ? "cursor-not-allowed bg-green-50 text-green-300"
+                            : "bg-green-100 text-green-700 hover:bg-green-200"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <Check size={15} />
+                          Approve
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => rejectDocument(document.id)}
+                        disabled={document.approvalStatus === "REJECTED"}
+                        className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                          document.approvalStatus === "REJECTED"
+                            ? "cursor-not-allowed bg-red-50 text-red-300"
+                            : "bg-red-100 text-red-700 hover:bg-red-200"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <Ban size={15} />
+                          Reject
+                        </span>
+                      </button>
+                    </div>
+
+                    {document.rejectionReason && (
+                      <p className="mt-2 text-xs text-red-600">
+                        Reason: {document.rejectionReason}
+                      </p>
+                    )}
+                  </td>
+                </tr>
+              ))}
+
+              {filteredDocuments.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
+                    No documents found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Upload Modal */}
       {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-8 shadow-xl">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-black text-slate-900">
+                  Upload Document
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Upload a client document for review.
+                </p>
+              </div>
 
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
-          <div className="bg-white w-full max-w-lg rounded-2xl p-8">
-
-            <div className="flex justify-between items-center mb-6">
-
-              <h3 className="text-2xl font-bold">
-                Upload Document
-              </h3>
-
-              <button onClick={() => setShowModal(false)}>
-
-                <X size={24} />
-
+              <button
+                onClick={() => setShowModal(false)}
+                className="rounded-xl bg-slate-100 p-2 hover:bg-slate-200"
+              >
+                <X size={22} />
               </button>
-
             </div>
 
-            <form
-              onSubmit={handleUpload}
-              className="space-y-4"
-            >
-
+            <form onSubmit={handleUpload} className="space-y-4">
               <select
                 name="clientId"
                 value={formData.clientId}
                 onChange={handleChange}
-                className="w-full border border-slate-300 rounded-xl px-4 py-3"
+                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
                 required
               >
-
-                <option value="">
-                  Select Client
-                </option>
+                <option value="">Select Client</option>
 
                 {clients.map((client) => (
-
-                  <option
-                    key={client.id}
-                    value={client.id}
-                  >
-
+                  <option key={client.id} value={client.id}>
                     {client.fullName}
-
                   </option>
-
                 ))}
-
               </select>
 
               <input
@@ -308,7 +452,7 @@ function DocumentsPage() {
                 placeholder="Document Name"
                 value={formData.documentName}
                 onChange={handleChange}
-                className="w-full border border-slate-300 rounded-xl px-4 py-3"
+                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
                 required
               />
 
@@ -318,7 +462,7 @@ function DocumentsPage() {
                 placeholder="Document Type"
                 value={formData.documentType}
                 onChange={handleChange}
-                className="w-full border border-slate-300 rounded-xl px-4 py-3"
+                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
                 required
               />
 
@@ -327,34 +471,56 @@ function DocumentsPage() {
                 name="expirationDate"
                 value={formData.expirationDate}
                 onChange={handleChange}
-                className="w-full border border-slate-300 rounded-xl px-4 py-3"
+                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
               />
 
               <input
                 type="file"
-                onChange={(e) => setSelectedFile(e.target.files[0])}
-                className="w-full border border-slate-300 rounded-xl px-4 py-3"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                className="w-full rounded-2xl border border-slate-300 px-4 py-3"
                 required
               />
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
+                className="w-full rounded-2xl bg-blue-600 py-3 font-bold text-white transition hover:bg-blue-700"
               >
-
                 Upload Document
-
               </button>
-
             </form>
-
           </div>
-
         </div>
-
       )}
-
     </div>
+  )
+}
+
+function StatsCard({ title, value, icon, color }) {
+  return (
+    <div className="rounded-3xl bg-white p-6 shadow-sm">
+      <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${color}`}>
+        {icon}
+      </div>
+      <p className="text-sm font-semibold text-slate-500">{title}</p>
+      <h3 className="mt-2 text-4xl font-black text-slate-900">{value ?? 0}</h3>
+    </div>
+  )
+}
+
+function StatusBadge({ status }) {
+  const value = status || "PENDING"
+
+  const classes =
+    value === "APPROVED"
+      ? "bg-green-100 text-green-700"
+      : value === "REJECTED"
+      ? "bg-red-100 text-red-700"
+      : "bg-yellow-100 text-yellow-700"
+
+  return (
+    <span className={`rounded-full px-3 py-1 text-xs font-bold ${classes}`}>
+      {value}
+    </span>
   )
 }
 

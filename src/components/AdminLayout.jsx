@@ -20,9 +20,10 @@ import { DollarSign } from "lucide-react"
 
 function AdminLayout({ children }) {
   const logout = () => {
-    localStorage.removeItem("token")
-    window.location.reload()
-  }
+  localStorage.removeItem("homecare_auth_token")
+  localStorage.removeItem("homecare_user")
+  window.location.reload()
+}
 
   return (
     <div className="flex min-h-screen bg-slate-100">
@@ -141,6 +142,11 @@ function AdminLayout({ children }) {
               icon={<Users size={20} />}
               text="Caregivers"
             />
+            <SidebarLink
+  to="/messages"
+  icon={<Bell size={20} />}
+  text="Messages"
+/>
           </div>
         </div>
 
