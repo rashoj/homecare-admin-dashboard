@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { MessageSquare, Send, Plus } from "lucide-react"
+import api from "../../api/axios"
 
 function FamilyMessagesTab() {
   const [conversations, setConversations] = useState([])
@@ -17,23 +18,17 @@ function FamilyMessagesTab() {
 
   async function loadConversations() {
     try {
-      const token = localStorage.getItem("homecare_auth_token")
+      setLoading(true)
 
-      const response = await fetch(
-        "http://localhost:8080/api/family-portal/messages/conversations",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await api.get(
+        "/family-portal/messages/conversations"
       )
 
-      const data = await response.json()
-
+      const data = response.data || []
       setConversations(data)
 
       if (data.length > 0) {
-        openConversation(data[0])
+        await openConversation(data[0])
       }
     } catch (error) {
       console.error(error)
@@ -46,18 +41,11 @@ function FamilyMessagesTab() {
     try {
       setSelectedConversation(conversation)
 
-      const token = localStorage.getItem("homecare_auth_token")
-
-      const response = await fetch(
-        `http://localhost:8080/api/family-portal/messages/conversations/${conversation.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await api.get(
+        `/family-portal/messages/conversations/${conversation.id}`
       )
 
-      setMessages(await response.json())
+      setMessages(response.data || [])
     } catch (error) {
       console.error(error)
     }
@@ -70,32 +58,20 @@ function FamilyMessagesTab() {
     }
 
     try {
-      const token = localStorage.getItem("homecare_auth_token")
-
-      const response = await fetch(
-        "http://localhost:8080/api/family-portal/messages/conversations",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            subject,
-            type: "FAMILY_AGENCY",
-          }),
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error("Failed to create conversation")
-      }
+      await api.post("/family-portal/messages/conversations", {
+        subject,
+        type: "FAMILY_AGENCY",
+      })
 
       setSubject("")
 
       await loadConversations()
     } catch (error) {
-      alert(error.message)
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to create conversation"
+      )
     }
   }
 
@@ -103,32 +79,23 @@ function FamilyMessagesTab() {
     if (!newMessage.trim()) return
 
     try {
-      const token = localStorage.getItem("homecare_auth_token")
-
-      const response = await fetch(
-        `http://localhost:8080/api/family-portal/messages/conversations/${selectedConversation.id}`,
+      await api.post(
+        `/family-portal/messages/conversations/${selectedConversation.id}`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            messageBody: newMessage,
-          }),
+          messageBody: newMessage,
         }
       )
-
-      if (!response.ok) {
-        throw new Error("Failed to send message")
-      }
 
       setNewMessage("")
 
       await openConversation(selectedConversation)
       await loadConversations()
     } catch (error) {
-      alert(error.message)
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to send message"
+      )
     }
   }
 
@@ -221,9 +188,7 @@ function FamilyMessagesTab() {
                     </span>
 
                     <span className="text-xs text-slate-400">
-                      {new Date(
-                        message.sentAt
-                      ).toLocaleString()}
+                      {new Date(message.sentAt).toLocaleString()}
                     </span>
                   </div>
 

@@ -6,6 +6,7 @@ import {
   Users,
   ClipboardCheck,
 } from "lucide-react"
+import api from "../../api/axios"
 
 function FamilyTimelineTab() {
   const [timeline, setTimeline] = useState([])
@@ -18,24 +19,18 @@ function FamilyTimelineTab() {
 
   async function loadTimeline() {
     try {
-      const token = localStorage.getItem("homecare_auth_token")
+      setLoading(true)
+      setErrorMessage("")
 
-      const response = await fetch(
-        "http://localhost:8080/api/family-portal/timeline",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      const response = await api.get("/family-portal/timeline")
 
-      if (!response.ok) {
-        throw new Error("Failed to load timeline.")
-      }
-
-      setTimeline(await response.json())
+      setTimeline(response.data || [])
     } catch (error) {
-      setErrorMessage(error.message || "Something went wrong.")
+      setErrorMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load timeline."
+      )
     } finally {
       setLoading(false)
     }
@@ -93,7 +88,7 @@ function FamilyTimelineTab() {
 
                 <div className="mt-3">
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-500">
-                    {item.type.replace("_", " ")}
+                    {item.type?.replace("_", " ")}
                   </span>
                 </div>
               </div>
@@ -126,7 +121,6 @@ function getIcon(type) {
 
 function formatDate(value) {
   if (!value) return "—"
-
   return new Date(value).toLocaleString()
 }
 

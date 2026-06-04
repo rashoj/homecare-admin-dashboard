@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Bell, CheckCircle2 } from "lucide-react"
+import api from "../../api/axios"
 
 function FamilyNotificationsTab() {
   const [notifications, setNotifications] = useState([])
@@ -12,24 +13,18 @@ function FamilyNotificationsTab() {
 
   async function loadNotifications() {
     try {
-      const token = localStorage.getItem("homecare_auth_token")
+      setLoading(true)
+      setErrorMessage("")
 
-      const response = await fetch(
-        "http://localhost:8080/api/family-portal/notifications",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      const response = await api.get("/family-portal/notifications")
 
-      if (!response.ok) {
-        throw new Error("Failed to load notifications.")
-      }
-
-      setNotifications(await response.json())
+      setNotifications(response.data || [])
     } catch (error) {
-      setErrorMessage(error.message || "Something went wrong.")
+      setErrorMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load notifications."
+      )
     } finally {
       setLoading(false)
     }
@@ -37,25 +32,15 @@ function FamilyNotificationsTab() {
 
   async function markAsRead(notificationId) {
     try {
-      const token = localStorage.getItem("homecare_auth_token")
-
-      const response = await fetch(
-        `http://localhost:8080/api/family-portal/notifications/${notificationId}/read`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error("Failed to mark notification as read.")
-      }
+      await api.put(`/family-portal/notifications/${notificationId}/read`)
 
       await loadNotifications()
     } catch (error) {
-      alert(error.message || "Failed to update notification.")
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to update notification."
+      )
     }
   }
 

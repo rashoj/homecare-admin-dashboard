@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import api from "../../api/axios"
 
 function FamilyMedicationsTab() {
   const [medications, setMedications] = useState([])
@@ -11,32 +12,30 @@ function FamilyMedicationsTab() {
 
   async function loadMedications() {
     try {
-      const token = localStorage.getItem("homecare_auth_token")
+      setLoading(true)
+      setErrorMessage("")
 
-      const response = await fetch(
-        "http://localhost:8080/api/family-portal/medications",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      const response = await api.get("/family-portal/medications")
 
-      if (!response.ok) {
-        throw new Error("Failed to load medications.")
-      }
-
-      setMedications(await response.json())
+      setMedications(response.data || [])
     } catch (error) {
-      setErrorMessage(error.message || "Something went wrong.")
+      setErrorMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load medications."
+      )
     } finally {
       setLoading(false)
     }
   }
 
-  if (loading) return <p className="text-slate-500">Loading medications...</p>
+  if (loading) {
+    return <p className="text-slate-500">Loading medications...</p>
+  }
 
-  if (errorMessage) return <p className="text-red-600">{errorMessage}</p>
+  if (errorMessage) {
+    return <p className="text-red-600">{errorMessage}</p>
+  }
 
   return (
     <div className="rounded-3xl bg-white p-8 shadow">
@@ -69,7 +68,10 @@ function FamilyMedicationsTab() {
 
               <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Info label="Frequency" value={med.frequency} />
-                <Info label="Scheduled Time" value={formatTime(med.scheduledTime)} />
+                <Info
+                  label="Scheduled Time"
+                  value={formatTime(med.scheduledTime)}
+                />
               </div>
 
               <div className="mt-4 rounded-xl bg-white p-4">
@@ -106,6 +108,7 @@ function formatTime(value) {
 
   const [hour, minute] = value.split(":")
   const date = new Date()
+
   date.setHours(Number(hour))
   date.setMinutes(Number(minute))
 

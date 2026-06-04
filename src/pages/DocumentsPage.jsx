@@ -12,6 +12,8 @@ import {
   CircleX,
 } from "lucide-react"
 
+import api from "../api/axios"
+
 import {
   getDocuments,
   uploadDocument,
@@ -45,8 +47,8 @@ function DocumentsPage() {
       const documentData = await getDocuments()
       const clientData = await getClients()
 
-      setDocuments(documentData)
-      setClients(clientData)
+      setDocuments(documentData || [])
+      setClients(clientData || [])
     } catch (error) {
       console.error(error)
       alert("Failed to load documents.")
@@ -66,71 +68,62 @@ function DocumentsPage() {
     })
   }
 
+  async function handleUpload(e) {
+    e.preventDefault()
 
- async function handleUpload(e) {
-  e.preventDefault()
-
-  if (!selectedFile) {
-    alert("Please select a file.")
-    return
-  }
-
-  try {
-    const actorUserId = getAdminUserId()
-
-    const uploadData = new FormData()
-    uploadData.append("file", selectedFile)
-    uploadData.append("uploadedByUserId", actorUserId)
-    uploadData.append("clientId", formData.clientId)
-    uploadData.append("documentName", formData.documentName)
-    uploadData.append("documentType", formData.documentType)
-
-    if (formData.expirationDate) {
-      uploadData.append("expirationDate", formData.expirationDate)
+    if (!selectedFile) {
+      alert("Please select a file.")
+      return
     }
 
-    await uploadDocument(uploadData)
-
-    setShowModal(false)
-    setSelectedFile(null)
-    setFormData({
-      clientId: "",
-      documentName: "",
-      documentType: "",
-      expirationDate: "",
-    })
-
-    await loadData()
-  } catch (error) {
-    console.error(error)
-    alert("Failed to upload document.")
-  }
-
-  
-  }
-  async function approveDocument(documentId) {
     try {
       const actorUserId = getAdminUserId()
-      const token = localStorage.getItem("homecare_auth_token")
 
-      const response = await fetch(
-        `http://localhost:8080/api/documents/${documentId}/approve?actorUserId=${actorUserId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      const uploadData = new FormData()
+      uploadData.append("file", selectedFile)
+      uploadData.append("uploadedByUserId", actorUserId)
+      uploadData.append("clientId", formData.clientId)
+      uploadData.append("documentName", formData.documentName)
+      uploadData.append("documentType", formData.documentType)
 
-      if (!response.ok) {
-        throw new Error("Failed to approve document.")
+      if (formData.expirationDate) {
+        uploadData.append("expirationDate", formData.expirationDate)
       }
+
+      await uploadDocument(uploadData)
+
+      setShowModal(false)
+      setSelectedFile(null)
+      setFormData({
+        clientId: "",
+        documentName: "",
+        documentType: "",
+        expirationDate: "",
+      })
 
       await loadData()
     } catch (error) {
       console.error(error)
-      alert(error.message || "Failed to approve document.")
+      alert("Failed to upload document.")
+    }
+  }
+
+  async function approveDocument(documentId) {
+    try {
+      const actorUserId = getAdminUserId()
+
+      await api.put(
+        `/documents/${documentId}/approve?actorUserId=${actorUserId}`
+      )
+
+      await loadData()
+    } catch (error) {
+      console.error(error)
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to approve document."
+      )
     }
   }
 
@@ -143,35 +136,34 @@ function DocumentsPage() {
 
     try {
       const actorUserId = getAdminUserId()
-      const token = localStorage.getItem("homecare_auth_token")
 
-      const response = await fetch(
-        `http://localhost:8080/api/documents/${documentId}/reject?reason=${encodeURIComponent(
+      await api.put(
+        `/documents/${documentId}/reject?reason=${encodeURIComponent(
           reason
-        )}&actorUserId=${actorUserId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        )}&actorUserId=${actorUserId}`
       )
-
-      if (!response.ok) {
-        throw new Error("Failed to reject document.")
-      }
 
       await loadData()
     } catch (error) {
       console.error(error)
-      alert(error.message || "Failed to reject document.")
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to reject document."
+      )
     }
   }
 
   const totalCount = documents.length
-  const pendingCount = documents.filter((doc) => doc.approvalStatus === "PENDING").length
-  const approvedCount = documents.filter((doc) => doc.approvalStatus === "APPROVED").length
-  const rejectedCount = documents.filter((doc) => doc.approvalStatus === "REJECTED").length
+  const pendingCount = documents.filter(
+    (doc) => doc.approvalStatus === "PENDING"
+  ).length
+  const approvedCount = documents.filter(
+    (doc) => doc.approvalStatus === "APPROVED"
+  ).length
+  const rejectedCount = documents.filter(
+    (doc) => doc.approvalStatus === "REJECTED"
+  ).length
 
   const filteredDocuments = documents.filter((document) => {
     const keyword = search.toLowerCase()
@@ -190,8 +182,10 @@ function DocumentsPage() {
 
     const matchesSource =
       sourceFilter === "ALL" ||
-      (sourceFilter === "FAMILY" && uploadedBy.toLowerCase().includes("family")) ||
-      (sourceFilter === "AGENCY" && !uploadedBy.toLowerCase().includes("family"))
+      (sourceFilter === "FAMILY" &&
+        uploadedBy.toLowerCase().includes("family")) ||
+      (sourceFilter === "AGENCY" &&
+        !uploadedBy.toLowerCase().includes("family"))
 
     return matchesSearch && matchesStatus && matchesSource
   })
@@ -314,7 +308,10 @@ function DocumentsPage() {
 
             <tbody>
               {filteredDocuments.map((document) => (
-                <tr key={document.id} className="border-t border-slate-100 hover:bg-slate-50">
+                <tr
+                  key={document.id}
+                  className="border-t border-slate-100 hover:bg-slate-50"
+                >
                   <td className="px-6 py-5">
                     <p className="font-bold text-slate-900">
                       {document.documentName || "Untitled Document"}
@@ -347,7 +344,9 @@ function DocumentsPage() {
                   <td className="px-6 py-5">
                     <div className="flex flex-wrap gap-2">
                       <button
-                        onClick={() => downloadDocument(document.id, document.fileName)}
+                        onClick={() =>
+                          downloadDocument(document.id, document.fileName)
+                        }
                         className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
                       >
                         <span className="flex items-center gap-2">
@@ -398,7 +397,10 @@ function DocumentsPage() {
 
               {filteredDocuments.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
+                  <td
+                    colSpan="7"
+                    className="px-6 py-12 text-center text-slate-500"
+                  >
                     No documents found.
                   </td>
                 </tr>
@@ -498,11 +500,15 @@ function DocumentsPage() {
 function StatsCard({ title, value, icon, color }) {
   return (
     <div className="rounded-3xl bg-white p-6 shadow-sm">
-      <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${color}`}>
+      <div
+        className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${color}`}
+      >
         {icon}
       </div>
       <p className="text-sm font-semibold text-slate-500">{title}</p>
-      <h3 className="mt-2 text-4xl font-black text-slate-900">{value ?? 0}</h3>
+      <h3 className="mt-2 text-4xl font-black text-slate-900">
+        {value ?? 0}
+      </h3>
     </div>
   )
 }

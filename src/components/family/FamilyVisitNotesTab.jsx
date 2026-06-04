@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import api from "../../api/axios"
 
 function FamilyVisitNotesTab() {
   const [visitNotes, setVisitNotes] = useState([])
@@ -8,24 +9,18 @@ function FamilyVisitNotesTab() {
   useEffect(() => {
     async function loadVisitNotes() {
       try {
-        const token = localStorage.getItem("homecare_auth_token")
+        setLoading(true)
+        setErrorMessage("")
 
-        const response = await fetch(
-          "http://localhost:8080/api/family-portal/visit-notes",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
+        const response = await api.get("/family-portal/visit-notes")
 
-        if (!response.ok) {
-          throw new Error("Failed to load visit notes.")
-        }
-
-        setVisitNotes(await response.json())
+        setVisitNotes(response.data || [])
       } catch (error) {
-        setErrorMessage(error.message || "Something went wrong.")
+        setErrorMessage(
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to load visit notes."
+        )
       } finally {
         setLoading(false)
       }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import api from "../../api/axios"
 
 function FamilyAppointmentsTab() {
   const [appointments, setAppointments] = useState([])
@@ -8,24 +9,18 @@ function FamilyAppointmentsTab() {
   useEffect(() => {
     async function loadAppointments() {
       try {
-        const token = localStorage.getItem("homecare_auth_token")
+        setLoading(true)
+        setErrorMessage("")
 
-        const response = await fetch(
-          "http://localhost:8080/api/family-portal/appointments",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
+        const response = await api.get("/family-portal/appointments")
 
-        if (!response.ok) {
-          throw new Error("Failed to load appointments.")
-        }
-
-        setAppointments(await response.json())
+        setAppointments(response.data || [])
       } catch (error) {
-        setErrorMessage(error.message || "Something went wrong.")
+        setErrorMessage(
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to load appointments."
+        )
       } finally {
         setLoading(false)
       }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import api from "../../api/axios"
 
 function ClientBillingTab({ clientId }) {
   const [billingRecords, setBillingRecords] = useState([])
@@ -11,25 +12,15 @@ function ClientBillingTab({ clientId }) {
         setLoading(true)
         setErrorMessage("")
 
-        const token = localStorage.getItem("homecare_auth_token")
+        const response = await api.get(`/billing-records/client/${clientId}`)
 
-        const response = await fetch(
-          `http://localhost:8080/api/billing-records/client/${clientId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-
-        if (!response.ok) {
-          throw new Error("Failed to load billing records.")
-        }
-
-        const data = await response.json()
-        setBillingRecords(data)
+        setBillingRecords(response.data || [])
       } catch (error) {
-        setErrorMessage(error.message || "Something went wrong.")
+        setErrorMessage(
+          error.response?.data?.message ||
+            error.message ||
+            "Something went wrong."
+        )
       } finally {
         setLoading(false)
       }
@@ -96,7 +87,7 @@ function ClientBillingTab({ clientId }) {
 
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                    {record.status}
+                    {record.status || "—"}
                   </span>
                 </td>
 

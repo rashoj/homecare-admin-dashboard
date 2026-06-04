@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react"
+import api from "../../api/axios"
 
 function ClientDocumentsTab({ clientId }) {
   const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
-
-  function getAdminToken() {
-    return localStorage.getItem("homecare_auth_token")
-  }
 
   function getAdminUser() {
     const savedUser = localStorage.getItem("homecare_user")
@@ -20,25 +17,17 @@ function ClientDocumentsTab({ clientId }) {
         setLoading(true)
         setErrorMessage("")
 
-        const token = getAdminToken()
-
-        const response = await fetch(
-          `http://localhost:8080/api/documents/client/${clientId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const response = await api.get(
+          `/documents/client/${clientId}`
         )
 
-        if (!response.ok) {
-          throw new Error("Failed to load documents.")
-        }
-
-        const data = await response.json()
-        setDocuments(data)
+        setDocuments(response.data || [])
       } catch (error) {
-        setErrorMessage(error.message || "Something went wrong.")
+        setErrorMessage(
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to load documents."
+        )
       } finally {
         setLoading(false)
       }
@@ -51,7 +40,6 @@ function ClientDocumentsTab({ clientId }) {
 
   async function downloadDocument(documentId, fileName) {
     try {
-      const token = getAdminToken()
       const user = getAdminUser()
 
       if (!user?.id) {
@@ -59,32 +47,27 @@ function ClientDocumentsTab({ clientId }) {
         return
       }
 
-      const response = await fetch(
-        `http://localhost:8080/api/documents/${documentId}/download?actorUserId=${user.id}`,
+      const response = await api.get(
+        `/documents/${documentId}/download?actorUserId=${user.id}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          responseType: "blob",
         }
       )
 
-      if (!response.ok) {
-        alert("Failed to download document.")
-        return
-      }
-
-      const blob = await response.blob()
+      const blob = new Blob([response.data])
       const url = window.URL.createObjectURL(blob)
 
       const link = document.createElement("a")
       link.href = url
       link.download = fileName || "client-document"
+
       document.body.appendChild(link)
       link.click()
       link.remove()
 
       window.URL.revokeObjectURL(url)
-    } catch {
+    } catch (error) {
+      console.error(error)
       alert("Failed to download document.")
     }
   }
@@ -145,7 +128,9 @@ function ClientDocumentsTab({ clientId }) {
 
                 <td className="px-4 py-3">
                   <button
-                    onClick={() => downloadDocument(doc.id, doc.fileName)}
+                    onClick={() =>
+                      downloadDocument(doc.id, doc.fileName)
+                    }
                     className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700"
                   >
                     Download

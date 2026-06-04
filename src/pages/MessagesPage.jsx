@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { MessageSquare, Send, RefreshCw } from "lucide-react"
+import api from "../api/axios"
 
 function MessagesPage() {
   const [conversations, setConversations] = useState([])
@@ -22,22 +23,11 @@ function MessagesPage() {
     try {
       setLoading(true)
 
-      const token = localStorage.getItem("homecare_auth_token")
-
-      const response = await fetch(
-        `http://localhost:8080/api/messages/conversations/user/${activeUserId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await api.get(
+        `/messages/conversations/user/${activeUserId}`
       )
 
-      if (!response.ok) {
-        throw new Error("Failed to load conversations.")
-      }
-
-      const data = await response.json()
+      const data = response.data || []
       setConversations(data)
 
       if (data.length > 0) {
@@ -47,7 +37,11 @@ function MessagesPage() {
         setMessages([])
       }
     } catch (error) {
-      alert(error.message || "Failed to load conversations.")
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load conversations."
+      )
     } finally {
       setLoading(false)
     }
@@ -57,24 +51,17 @@ function MessagesPage() {
     try {
       setSelectedConversation(conversation)
 
-      const token = localStorage.getItem("homecare_auth_token")
-
-      const response = await fetch(
-        `http://localhost:8080/api/messages/conversations/${conversation.id}/user/${activeUserId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await api.get(
+        `/messages/conversations/${conversation.id}/user/${activeUserId}`
       )
 
-      if (!response.ok) {
-        throw new Error("Failed to load messages.")
-      }
-
-      setMessages(await response.json())
+      setMessages(response.data || [])
     } catch (error) {
-      alert(error.message || "Failed to load messages.")
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load messages."
+      )
     }
   }
 
@@ -86,32 +73,23 @@ function MessagesPage() {
     }
 
     try {
-      const token = localStorage.getItem("homecare_auth_token")
-
-      const response = await fetch(
-        `http://localhost:8080/api/messages/conversations/${selectedConversation.id}/messages`,
+      await api.post(
+        `/messages/conversations/${selectedConversation.id}/messages`,
         {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            senderUserId: activeUserId,
-            messageBody: replyMessage,
-          }),
+          senderUserId: activeUserId,
+          messageBody: replyMessage,
         }
       )
-
-      if (!response.ok) {
-        throw new Error("Failed to send message.")
-      }
 
       setReplyMessage("")
       await openConversation(selectedConversation)
       await loadConversations()
     } catch (error) {
-      alert(error.message || "Failed to send message.")
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to send message."
+      )
     }
   }
 
@@ -213,7 +191,9 @@ function MessagesPage() {
                   </p>
 
                   <p className="mt-2 text-xs text-slate-400">
-                    {formatDate(conversation.lastMessageAt || conversation.createdAt)}
+                    {formatDate(
+                      conversation.lastMessageAt || conversation.createdAt
+                    )}
                   </p>
                 </button>
               ))
@@ -261,7 +241,9 @@ function MessagesPage() {
                       return (
                         <div
                           key={message.id}
-                          className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                          className={`flex ${
+                            isMine ? "justify-end" : "justify-start"
+                          }`}
                         >
                           <div
                             className={`max-w-[75%] rounded-2xl p-4 shadow-sm ${
@@ -292,7 +274,10 @@ function MessagesPage() {
                   )}
                 </div>
 
-                <form onSubmit={sendReply} className="border-t border-slate-100 p-4">
+                <form
+                  onSubmit={sendReply}
+                  className="border-t border-slate-100 p-4"
+                >
                   <div className="flex gap-3">
                     <input
                       value={replyMessage}
