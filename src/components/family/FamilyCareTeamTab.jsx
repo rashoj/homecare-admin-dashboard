@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Mail, User, Shield } from "lucide-react"
+import api from "../../api/axios"
 
 function FamilyCareTeamTab() {
   const [caregivers, setCaregivers] = useState([])
@@ -12,24 +13,18 @@ function FamilyCareTeamTab() {
 
   async function loadCareTeam() {
     try {
-      const token = localStorage.getItem("homecare_auth_token")
+      setLoading(true)
+      setErrorMessage("")
 
-      const response = await fetch(
-        "http://localhost:8080/api/family-portal/care-team",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      const response = await api.get("/family-portal/care-team")
 
-      if (!response.ok) {
-        throw new Error("Failed to load care team.")
-      }
-
-      setCaregivers(await response.json())
+      setCaregivers(response.data || [])
     } catch (error) {
-      setErrorMessage(error.message || "Something went wrong.")
+      setErrorMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load care team."
+      )
     } finally {
       setLoading(false)
     }

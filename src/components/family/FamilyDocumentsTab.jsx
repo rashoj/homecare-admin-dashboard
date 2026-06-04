@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import api from "../../api/axios"
 
 function FamilyDocumentsTab() {
   const [documents, setDocuments] = useState([])
@@ -19,25 +20,15 @@ function FamilyDocumentsTab() {
       setLoading(true)
       setErrorMessage("")
 
-      const token = localStorage.getItem("homecare_auth_token")
+      const response = await api.get("/family-portal/documents")
 
-      const response = await fetch(
-        "http://localhost:8080/api/family-portal/documents",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error("Failed to load documents.")
-      }
-
-      const data = await response.json()
-      setDocuments(data)
+      setDocuments(response.data || [])
     } catch (error) {
-      setErrorMessage(error.message || "Something went wrong.")
+      setErrorMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load documents."
+      )
     } finally {
       setLoading(false)
     }
@@ -54,8 +45,6 @@ function FamilyDocumentsTab() {
     try {
       setUploading(true)
 
-      const token = localStorage.getItem("homecare_auth_token")
-
       const formData = new FormData()
       formData.append("file", file)
       formData.append("documentName", documentName)
@@ -65,20 +54,11 @@ function FamilyDocumentsTab() {
         formData.append("expirationDate", expirationDate)
       }
 
-      const response = await fetch(
-        "http://localhost:8080/api/family-portal/documents/upload",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error("Failed to upload document.")
-      }
+      await api.post("/family-portal/documents/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
 
       setFile(null)
       setDocumentName("")
@@ -89,7 +69,11 @@ function FamilyDocumentsTab() {
 
       await loadDocuments()
     } catch (error) {
-      alert(error.message || "Upload failed.")
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Upload failed."
+      )
     } finally {
       setUploading(false)
     }
