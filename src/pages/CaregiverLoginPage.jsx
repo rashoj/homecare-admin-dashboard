@@ -1,9 +1,9 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import api from "../api/axios"
-import { saveCaregiverAuth } from "../services/caregiverAuthStorage"
+import { saveAuth } from "../services/authStorage"
 
-function CaregiverLoginPage() {
+function CaregiverLoginPage({ onLogin }) {
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
@@ -29,16 +29,41 @@ function CaregiverLoginPage() {
       setErrorMessage("")
 
       const response = await api.post("/auth/login", formData)
+      const data = response.data
 
-      if (response.data.role !== "CAREGIVER") {
+      console.log("CAREGIVER LOGIN RESPONSE:", data)
+
+      const role = data.role?.replace("ROLE_", "")
+
+      if (role !== "CAREGIVER") {
         setErrorMessage("This login is only for caregivers.")
         return
       }
 
-      saveCaregiverAuth(response.data)
+      const token = data.token || data.jwt || data.accessToken
 
-      navigate("/caregiver")
+      if (!token) {
+        setErrorMessage("Login succeeded, but token was missing.")
+        return
+      }
+
+      const user = {
+        id: data.id,
+        fullName: data.fullName,
+        name: data.fullName || data.email,
+        email: data.email,
+        role: "CAREGIVER",
+      }
+
+      saveAuth(token, user)
+
+      if (onLogin) {
+        onLogin(user)
+      }
+
+      navigate("/caregiver", { replace: true })
     } catch (error) {
+      console.error("CAREGIVER LOGIN ERROR:", error)
       setErrorMessage(
         error.response?.data?.message || "Invalid email or password."
       )

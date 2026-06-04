@@ -49,6 +49,11 @@ function AppointmentsPage() {
     }
   }
 
+  function getCurrentUser() {
+    const savedUser = localStorage.getItem("homecare_user")
+    return savedUser ? JSON.parse(savedUser) : null
+  }
+
   async function loadAssignedCaregivers(clientId) {
     if (!clientId) {
       setAssignedCaregivers([])
@@ -120,12 +125,25 @@ function AppointmentsPage() {
       return
     }
 
+    const currentUser = getCurrentUser()
+
+    if (!currentUser?.id) {
+      alert("Logged-in admin user was not found. Please logout and login again.")
+      return
+    }
+
+    const payload = {
+      ...formData,
+      clientId: Number(formData.clientId),
+      caregiverId: Number(formData.caregiverId),
+      createdByUserId: currentUser.id,
+      repeatType: "NONE",
+    }
+
+    console.log("APPOINTMENT PAYLOAD", payload)
+
     try {
-      await createAppointment({
-        ...formData,
-        clientId: Number(formData.clientId),
-        caregiverId: Number(formData.caregiverId),
-      })
+      await createAppointment(payload)
 
       setShowModal(false)
       resetForm()
@@ -139,10 +157,18 @@ function AppointmentsPage() {
   }
 
   async function handleStatusUpdate(appointment, status) {
+    const currentUser = getCurrentUser()
+
+    if (!currentUser?.id) {
+      alert("Logged-in admin user was not found. Please logout and login again.")
+      return
+    }
+
     try {
       await updateAppointmentStatus(appointment.id, {
         status,
         notes: appointment.notes || "",
+        updatedByUserId: currentUser.id,
       })
 
       await loadData()
@@ -263,6 +289,14 @@ function AppointmentsPage() {
                 </td>
               </tr>
             ))}
+
+            {filteredAppointments.length === 0 && (
+              <tr>
+                <td colSpan="10" className="p-8 text-center text-slate-500">
+                  No appointments found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

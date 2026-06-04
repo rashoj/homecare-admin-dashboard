@@ -14,12 +14,13 @@ import {
   getTodayCaregiverAssignment,
   clockIn,
   clockOut,
+  getClockRecordByAppointment,
 } from "../services/caregiverApi"
 
 import {
-  getCaregiverUser,
-  clearCaregiverAuth,
-} from "../services/caregiverAuthStorage"
+  getUser,
+  logout,
+} from "../services/authStorage"
 
 import { evvSettings } from "../data/settingsData"
 import { calculateDistanceInFeet } from "../utils/gpsUtils"
@@ -34,8 +35,7 @@ import CaregiverMyRequestsDashboard from "../components/caregiver/CaregiverMyReq
 
 function CaregiverPortalPage() {
   const navigate = useNavigate()
-  const caregiverUser = getCaregiverUser()
-
+const caregiverUser = getUser()
   const [assignmentData, setAssignmentData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeClockRecord, setActiveClockRecord] = useState(null)
@@ -55,6 +55,20 @@ function CaregiverPortalPage() {
         const data = await getTodayCaregiverAssignment(caregiverUser.id)
 
         setAssignmentData(data)
+
+        const existingClockRecord = await getClockRecordByAppointment(data.appointmentId)
+
+if (existingClockRecord) {
+  setActiveClockRecord(existingClockRecord)
+
+  if (existingClockRecord.clockOutTime) {
+    setStatus("Clocked Out")
+    setHasClockedOut(true)
+  } else {
+    setStatus("Clocked In")
+    setHasClockedOut(false)
+  }
+}
 
         if (data?.status === "COMPLETED") {
           setStatus("Clocked Out")
@@ -84,10 +98,10 @@ function CaregiverPortalPage() {
   const appointmentCompleted =
     hasClockedOut || todayAssignment?.status === "COMPLETED"
 
-  function handleLogout() {
-    clearCaregiverAuth()
-    navigate("/caregiver-login")
-  }
+ function handleLogout() {
+  logout()
+  navigate("/caregiver-login")
+}
 
   function getGPSLocation() {
     return new Promise((resolve, reject) => {
@@ -138,11 +152,12 @@ function CaregiverPortalPage() {
       }
 
       const response = await clockIn({
-        appointmentId: todayAssignment.appointmentId,
-        latitude: gps.latitude,
-        longitude: gps.longitude,
-        notes: "",
-      })
+  appointmentId: todayAssignment.appointmentId,
+  latitude: gps.latitude,
+  longitude: gps.longitude,
+  notes: "",
+  actorUserId: caregiver.id,
+})
 
       setActiveClockRecord(response)
       setLocation(gps)
@@ -166,11 +181,12 @@ function CaregiverPortalPage() {
       const gps = await getGPSLocation()
 
       await clockOut({
-        appointmentId: todayAssignment.appointmentId,
-        latitude: gps.latitude,
-        longitude: gps.longitude,
-        notes: "",
-      })
+  appointmentId: todayAssignment.appointmentId,
+  latitude: gps.latitude,
+  longitude: gps.longitude,
+  notes: "",
+  actorUserId: caregiver.id,
+})
 
       setActiveClockRecord(null)
       setLocation(gps)

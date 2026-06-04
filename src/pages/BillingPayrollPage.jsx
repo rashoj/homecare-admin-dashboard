@@ -64,24 +64,30 @@ function BillingPayrollPage() {
     e.preventDefault()
 
     try {
-      await reviewTimesheet(selectedTimesheet.id, {
-        caregiverPayRate: Number(reviewData.caregiverPayRate),
-        billingRate: Number(reviewData.billingRate),
-        payrollStatus: reviewData.payrollStatus,
-        billingStatus: reviewData.billingStatus,
-       billable: reviewData.billable,
-authorizationOverride:
-  selectedTimesheet.authorizationValid === false &&
-  reviewData.billable,
-authorizationOverrideReason:
-  reviewData.authorizationOverrideReason,
-notes: reviewData.notes,
-      })
+      const savedUser = localStorage.getItem("homecare_user")
+const currentUser = savedUser ? JSON.parse(savedUser) : null
 
-      await loadTimesheets()
-      closeReview()
+await reviewTimesheet(selectedTimesheet.id, {
+  caregiverPayRate: Number(reviewData.caregiverPayRate),
+  billingRate: Number(reviewData.billingRate),
+  payrollStatus: reviewData.payrollStatus,
+  billingStatus: reviewData.billingStatus,
+  billable: reviewData.billable,
+  authorizationOverride:
+    selectedTimesheet.authorizationValid === false &&
+    reviewData.billable,
+  authorizationOverrideReason:
+    reviewData.authorizationOverrideReason,
+  notes: reviewData.notes,
+  actorUserId: currentUser?.id,
+})
 
-      alert("Timesheet reviewed successfully.")
+    alert("Timesheet reviewed successfully.")
+
+    setSelectedTimesheet(null)
+
+    const updatedTimesheets = await getTimesheets()
+    setTimesheets(updatedTimesheets)
     } catch (error) {
       alert(error.message)
     }

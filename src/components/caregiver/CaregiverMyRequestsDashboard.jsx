@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getCaregiverToken } from "../../services/caregiverAuthStorage"
+import { getToken } from "../../services/authStorage"
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -14,13 +14,16 @@ function CaregiverMyRequestsDashboard({ caregiver }) {
   }, [caregiver?.id])
 
   async function loadRequests() {
-    if (!caregiver?.id) return
+   if (!caregiver?.id) {
+  setLoading(false)
+  return
+}
 
     try {
       setLoading(true)
       setMessage("")
 
-      const token = getCaregiverToken()
+const token = getToken()
 
       const [referralResponse, rescheduleResponse] = await Promise.all([
         fetch(`${API_BASE_URL}/appointment-referrals/caregiver/${caregiver.id}`, {
@@ -34,21 +37,25 @@ function CaregiverMyRequestsDashboard({ caregiver }) {
         ),
       ])
 
-      if (!referralResponse.ok) {
-        throw new Error("Failed to load referral requests.")
-      }
+ if (referralResponse.ok) {
+  setReferrals(await referralResponse.json())
+} else {
+  console.warn("Referral requests unavailable")
+  setReferrals([])
+}
 
-      if (!rescheduleResponse.ok) {
-        throw new Error("Failed to load reschedule requests.")
-      }
-
-      setReferrals(await referralResponse.json())
-      setReschedules(await rescheduleResponse.json())
-    } catch (error) {
-      setMessage(error.message || "Unable to load requests.")
-    } finally {
-      setLoading(false)
-    }
+if (rescheduleResponse.ok) {
+  setReschedules(await rescheduleResponse.json())
+} else {
+  console.warn("Reschedule requests unavailable")
+  setReschedules([])
+}} catch (error) {
+  console.error(error)
+  setReferrals([])
+  setReschedules([])
+} finally {
+  setLoading(false)
+}
   }
 
   if (loading) {

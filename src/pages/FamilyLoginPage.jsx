@@ -33,7 +33,7 @@ function FamilyLoginPage({ onLogin }) {
       saveAuth(data.token, user)
       onLogin(user)
 
-      navigate("/family-portal")
+navigate("/family-portal", { replace: true })
     } catch (error) {
       console.error(error)
       alert("Invalid family login")

@@ -164,3 +164,25 @@ export async function createVisitNote(payload) {
 
   return response.json()
 }
+export async function adminAdjustClockRecord(clockRecordId, payload) {
+  const token = getToken()
+
+  const response = await fetch(
+    `${API_BASE_URL}/clock/${clockRecordId}/admin-adjust`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  )
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || "Failed to adjust clock record.")
+  }
+
+  return response.json()
+}

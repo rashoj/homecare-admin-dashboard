@@ -31,103 +31,138 @@ import FamilyLoginPage from "./pages/FamilyLoginPage"
 import FamilyPortalPage from "./pages/FamilyPortalPage"
 import MessagesPage from "./pages/MessagesPage"
 
-
 import AdminLayout from "./components/AdminLayout"
 
-
 function App() {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(() => getStoredUser())
 
-  if (!user) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-
-          <Route
-            path="/admin-login"
-            element={<LoginPage onLogin={setUser} />}
-          />
-
-          <Route
-            path="/caregiver-login"
-            element={<CaregiverLoginPage />}
-          />
-
-          <Route
-            path="/family-login"
-            element={<FamilyLoginPage onLogin={setUser} />}
-          />
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    )
+  function handleLogin(loggedInUser) {
+    setUser(loggedInUser)
   }
 
-  if (user.role === "FAMILY_MEMBER") {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/family-portal" element={<FamilyPortalPage />} />
-          <Route path="*" element={<Navigate to="/family-portal" replace />} />
-        </Routes>
-      </BrowserRouter>
-    )
-  }
-
-  if (user.role === "CAREGIVER") {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/caregiver" element={<CaregiverPortalPage />} />
-          <Route path="*" element={<Navigate to="/caregiver" replace />} />
-        </Routes>
-      </BrowserRouter>
-    )
+  function handleLogout() {
+    localStorage.removeItem("homecare_user")
+    localStorage.removeItem("homecare_auth_token")
+    localStorage.removeItem("token")
+    setUser(null)
+    window.location.href = "/"
   }
 
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<HomePage />} />
+
+        <Route
+          path="/admin-login"
+          element={<LoginPage onLogin={handleLogin} />}
+        />
+
+        <Route
+          path="/caregiver-login"
+          element={<CaregiverLoginPage onLogin={handleLogin} />}
+        />
+
+        <Route
+          path="/family-login"
+          element={<FamilyLoginPage onLogin={handleLogin} />}
+        />
+
+        <Route
+          path="/family-portal"
+          element={
+            <ProtectedRoute user={user} roles={["FAMILY_MEMBER"]}>
+              <FamilyPortalPage onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/caregiver"
+          element={
+            <ProtectedRoute user={user} roles={["CAREGIVER"]}>
+              <CaregiverPortalPage onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/*"
           element={
-            <AdminLayout>
-              <Routes>
-                <Route path="/" element={<DashboardPage user={user} />} />
-                <Route path="/clients" element={<ClientsPage />} />
-                <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
-                <Route path="/caregivers" element={<CaregiversPage />} />
-                <Route path="/caregivers/:id" element={<CaregiverDetailsPage />} />
-                <Route path="/appointments" element={<AppointmentsPage />} />
-                <Route path="/documents" element={<DocumentsPage />} />
-                <Route path="/medications" element={<MedicationsPage />} />
-                <Route path="/mar-review" element={<MARReviewPage />} />
-                <Route path="/clock-records" element={<ClockRecordsPage />} />
-                <Route path="/visit-notes" element={<VisitNotesPage />} />
-                <Route path="/calendar" element={<CalendarPage />} />
-                <Route path="/payroll" element={<PayrollPage />} />
-                <Route path="/billing-payroll" element={<BillingPayrollPage />} />
-                <Route path="/reports" element={<ReportsPage />} />
-                <Route path="/compliance" element={<CompliancePage />} />
-                <Route path="/messages" element={<MessagesPage />} />
-                <Route
-                  path="/service-documentation-review"
-                  element={<ServiceDocumentationReviewPage />}
-                />
-                <Route path="/incidents" element={<IncidentsPage />} />
-                <Route path="/client-risk" element={<ClientRiskPage />} />
-                <Route path="/authorizations" element={<AuthorizationsPage />} />
-                <Route path="/evv-alerts" element={<EVVAlertsPage />} />
-                <Route path="/evv-exceptions" element={<EVVExceptionsPage />} />
-              </Routes>
-            </AdminLayout>
+            <ProtectedRoute user={user} roles={["ADMIN"]}>
+              <AdminLayout onLogout={handleLogout}>
+                <Routes>
+                  <Route path="/" element={<DashboardPage user={user} />} />
+                  <Route path="/dashboard" element={<DashboardPage user={user} />} />
+                  <Route path="/clients" element={<ClientsPage />} />
+                  <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
+                  <Route path="/caregivers" element={<CaregiversPage />} />
+                  <Route path="/caregivers/:id" element={<CaregiverDetailsPage />} />
+                  <Route path="/appointments" element={<AppointmentsPage />} />
+                  <Route path="/documents" element={<DocumentsPage />} />
+                  <Route path="/medications" element={<MedicationsPage />} />
+                  <Route path="/mar-review" element={<MARReviewPage />} />
+                  <Route path="/clock-records" element={<ClockRecordsPage />} />
+                  <Route path="/visit-notes" element={<VisitNotesPage />} />
+                  <Route path="/calendar" element={<CalendarPage />} />
+                  <Route path="/payroll" element={<PayrollPage />} />
+                  <Route path="/billing-payroll" element={<BillingPayrollPage />} />
+                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route path="/compliance" element={<CompliancePage />} />
+                  <Route path="/messages" element={<MessagesPage />} />
+                  <Route
+                    path="/service-documentation-review"
+                    element={<ServiceDocumentationReviewPage />}
+                  />
+                  <Route path="/incidents" element={<IncidentsPage />} />
+                  <Route path="/client-risk" element={<ClientRiskPage />} />
+                  <Route path="/authorizations" element={<AuthorizationsPage />} />
+                  <Route path="/evv-alerts" element={<EVVAlertsPage />} />
+                  <Route path="/evv-exceptions" element={<EVVExceptionsPage />} />
+                 
+                </Routes>
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
+
+        <Route path="*" element={<Navigate to={getDefaultPath(user)} replace />} />
       </Routes>
     </BrowserRouter>
   )
+}
+
+function getStoredUser() {
+  try {
+    const savedUser = localStorage.getItem("homecare_user")
+    return savedUser ? JSON.parse(savedUser) : null
+  } catch {
+    localStorage.removeItem("homecare_user")
+    localStorage.removeItem("homecare_auth_token")
+    return null
+  }
+}
+
+function getDefaultPath(user) {
+  if (!user) return "/"
+
+  if (user.role === "ADMIN") return "/"
+  if (user.role === "CAREGIVER") return "/caregiver"
+  if (user.role === "FAMILY_MEMBER") return "/family-portal"
+
+  return "/"
+}
+
+function ProtectedRoute({ user, roles, children }) {
+  if (!user) {
+    return <Navigate to="/" replace />
+  }
+
+  if (roles && !roles.includes(user.role)) {
+    return <Navigate to={getDefaultPath(user)} replace />
+  }
+
+  return children
 }
 
 export default App

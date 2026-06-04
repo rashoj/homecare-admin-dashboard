@@ -53,12 +53,28 @@ function HomePage() {
           <a className="hover:text-blue-700" href="#login">Login</a>
         </nav>
 
-        <button
-          onClick={() => navigate("/admin-login")}
-          className="rounded-xl bg-blue-800 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-900"
-        >
-          Admin Login
-        </button>
+       <div className="flex items-center gap-2">
+  <button
+    onClick={() => navigate("/caregiver-login")}
+    className="rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm font-bold text-blue-700 shadow-sm transition hover:bg-blue-50"
+  >
+    Caregiver
+  </button>
+
+  <button
+    onClick={() => navigate("/family-login")}
+    className="rounded-xl border border-green-200 bg-white px-4 py-3 text-sm font-bold text-green-700 shadow-sm transition hover:bg-green-50"
+  >
+    Family
+  </button>
+
+  <button
+    onClick={() => navigate("/admin-login")}
+    className="rounded-xl bg-blue-800 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-900"
+  >
+    Admin
+  </button>
+</div>
       </header>
 
       <main className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-6 py-10 lg:grid-cols-[0.95fr_1.05fr]">
@@ -76,25 +92,34 @@ function HomePage() {
             Manage clients, caregivers, EVV, eMAR, ISP goals, behavior tracking,
             billing, and compliance from one modern platform.
           </p>
+<div className="mt-8 flex flex-col gap-3 sm:flex-row">
+  <button
+    onClick={() => navigate("/admin-login")}
+    className="group rounded-xl bg-blue-700 px-6 py-3.5 font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-800"
+  >
+    <span className="inline-flex items-center gap-2">
+      Admin Portal
+      <ArrowRight
+        size={18}
+        className="transition group-hover:translate-x-1"
+      />
+    </span>
+  </button>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <button
-              onClick={() => navigate("/admin-login")}
-              className="group rounded-xl bg-blue-700 px-6 py-3.5 font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-800"
-            >
-              <span className="inline-flex items-center gap-2">
-                Login to Admin Portal
-                <ArrowRight size={18} className="transition group-hover:translate-x-1" />
-              </span>
-            </button>
+  <button
+    onClick={() => navigate("/caregiver-login")}
+    className="rounded-xl border border-blue-200 bg-white px-6 py-3.5 font-bold text-blue-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50"
+  >
+    Caregiver Login
+  </button>
 
-            <button
-              onClick={() => navigate("/caregiver-login")}
-              className="rounded-xl border border-blue-200 bg-white px-6 py-3.5 font-bold text-blue-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              Caregiver Login
-            </button>
-          </div>
+  <button
+    onClick={() => navigate("/family-login")}
+    className="rounded-xl border border-green-200 bg-white px-6 py-3.5 font-bold text-green-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-green-50"
+  >
+    Family Login
+  </button>
+</div>
 
           <div id="features" className="mt-10 grid gap-4 sm:grid-cols-2">
             <Feature icon={<ClipboardCheck />} title="Audit-ready documentation" />

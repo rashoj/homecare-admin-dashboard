@@ -18,12 +18,18 @@ import {
 import { Link } from "react-router-dom"
 import { DollarSign } from "lucide-react"
 
-function AdminLayout({ children }) {
+function AdminLayout({ children, onLogout }) {
   const logout = () => {
-  localStorage.removeItem("homecare_auth_token")
-  localStorage.removeItem("homecare_user")
-  window.location.reload()
-}
+    if (onLogout) {
+      onLogout()
+      return
+    }
+
+    localStorage.removeItem("homecare_auth_token")
+    localStorage.removeItem("homecare_user")
+    localStorage.removeItem("token")
+    window.location.href = "/"
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-100">

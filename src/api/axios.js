@@ -1,27 +1,23 @@
 import axios from "axios"
-import { getToken } from "../services/authStorage"
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api",
 })
 
-api.interceptors.request.use(
-  (config) => {
-    const isAuthRequest =
-      config.url?.includes("/auth/login") ||
-      config.url?.includes("/auth/register")
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("homecare_auth_token")
 
-    if (!isAuthRequest) {
-      const token = getToken()
+  const isValidJwt =
+    token &&
+    token !== "undefined" &&
+    token !== "null" &&
+    token.split(".").length === 3
 
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
-    }
+  if (isValidJwt) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
 
-    return config
-  },
-  (error) => Promise.reject(error)
-)
+  return config
+})
 
 export default api

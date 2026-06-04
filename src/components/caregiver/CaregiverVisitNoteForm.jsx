@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { createVisitNote } from "../../services/clientApi"
+import { getUser } from "../../services/authStorage"
 
 function CaregiverVisitNoteForm({ appointmentId, canSubmit }) {
   const [formData, setFormData] = useState({
@@ -17,6 +18,8 @@ function CaregiverVisitNoteForm({ appointmentId, canSubmit }) {
 
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+       const caregiverUser = getUser()
+
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -33,10 +36,19 @@ function CaregiverVisitNoteForm({ appointmentId, canSubmit }) {
     try {
       setSubmitting(true)
 
-      await createVisitNote({
-        appointmentId,
-        ...formData,
-      })
+
+await createVisitNote({
+  appointmentId,
+  ...formData,
+  actorUserId: caregiverUser?.id,
+})
+    
+console.log("VISIT NOTE PAYLOAD", {
+  appointmentId,
+  ...formData,
+  actorUserId: caregiverUser?.id,
+})
+    
 
       setSubmitted(true)
       alert("Visit note submitted successfully.")

@@ -89,3 +89,18 @@ export async function getClockRecords() {
 
   return response.json()
 }
+export async function getClockRecordByAppointment(appointmentId) {
+  const token = getToken()
+
+  const response = await fetch(`${API_BASE_URL}/clock/appointment/${appointmentId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    return null
+  }
+
+  return response.json()
+}

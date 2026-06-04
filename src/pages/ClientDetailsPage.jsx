@@ -12,6 +12,7 @@ import ClientISPGoalsTab from "../components/client/ClientISPGoalsTab"
 import ClientBehaviorIncidentCardsTab from "../components/client/ClientBehaviorIncidentCardsTab"
 import ClientBillingTab from "../components/client/ClientBillingTab"
 import ClientDocumentsTab from "../components/client/ClientDocumentsTab"
+import ClientFamilyAccessTab from "../components/client/ClientFamilyAccessTab"
 
 function ClientDetailsPage() {
   const { clientId } = useParams()
@@ -33,6 +34,7 @@ function ClientDetailsPage() {
     { id: "documents", label: "Documents" },
     { id: "billing", label: "Billing" },
     { id: "caregivers", label: "Caregivers" },
+    { id: "familyAccess", label: "Family Access" },
   ]
 
   useEffect(() => {
@@ -215,6 +217,9 @@ function ClientDetailsPage() {
         {activeTab === "caregivers" && (
           <ClientCaregiversTab clientId={clientId} />
         )}
+        {activeTab === "familyAccess" && (
+  <ClientFamilyAccessTab clientId={clientId} />
+)}
       </div>
     </div>
   )

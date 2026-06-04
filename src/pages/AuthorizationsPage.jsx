@@ -66,27 +66,31 @@ function AuthorizationsPage() {
     })
   }
 
-  async function handleCreate(e) {
-    e.preventDefault()
+ async function handleCreate(e) {
+  e.preventDefault()
 
-    try {
-      await createAuthorization({
-        ...formData,
-        clientId: Number(formData.clientId),
-        approvedWeeklyHours: Number(formData.approvedWeeklyHours),
-        approvedTotalHours: Number(formData.approvedTotalHours),
-      })
+  try {
+    const savedUser = localStorage.getItem("homecare_user")
+    const currentUser = savedUser ? JSON.parse(savedUser) : null
 
-      resetForm()
-      setShowCreateModal(false)
+    await createAuthorization({
+      ...formData,
+      clientId: Number(formData.clientId),
+      approvedWeeklyHours: Number(formData.approvedWeeklyHours),
+      approvedTotalHours: Number(formData.approvedTotalHours),
+      actorUserId: currentUser?.id,
+    })
 
-      await loadAuthorizations()
+    resetForm()
+    setShowCreateModal(false)
 
-      alert("Authorization created.")
-    } catch (error) {
-      alert(error.message)
-    }
+    await loadAuthorizations()
+
+    alert("Authorization created.")
+  } catch (error) {
+    alert(error.message)
   }
+}
 
   async function handleClose(id) {
     if (!window.confirm("Close this authorization?")) return

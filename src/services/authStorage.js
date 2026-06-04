@@ -2,6 +2,10 @@ const TOKEN_KEY = "homecare_auth_token"
 const USER_KEY = "homecare_user"
 
 export function saveAuth(token, user) {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
+  localStorage.removeItem("token")
+
   localStorage.setItem(TOKEN_KEY, token)
   localStorage.setItem(USER_KEY, JSON.stringify(user))
 }
@@ -18,4 +22,5 @@ export function getUser() {
 export function logout() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
+  localStorage.removeItem("token")
 }
