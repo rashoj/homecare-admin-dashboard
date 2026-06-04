@@ -7,6 +7,7 @@ import FamilyCareTeamTab from "../components/family/FamilyCareTeamTab"
 import FamilyNotificationsTab from "../components/family/FamilyNotificationsTab"
 import FamilyTimelineTab from "../components/family/FamilyTimelineTab"
 import FamilyMessagesTab from "../components/family/FamilyMessagesTab"
+import api from "../api/axios"
 
 function FamilyPortalPage() {
   const [dashboard, setDashboard] = useState(null)
@@ -20,25 +21,15 @@ function FamilyPortalPage() {
         setLoading(true)
         setErrorMessage("")
 
-        const token = localStorage.getItem("homecare_auth_token")
+        const response = await api.get("/family-portal/dashboard")
 
-        const response = await fetch(
-          "http://localhost:8080/api/family-portal/dashboard",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-
-        if (!response.ok) {
-          throw new Error("Failed to load family portal.")
-        }
-
-        const data = await response.json()
-        setDashboard(data)
+        setDashboard(response.data)
       } catch (error) {
-        setErrorMessage(error.message || "Something went wrong.")
+        setErrorMessage(
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to load family portal."
+        )
       } finally {
         setLoading(false)
       }
@@ -93,53 +84,42 @@ function FamilyPortalPage() {
           active={activeTab === "visitNotes"}
           onClick={() => setActiveTab("visitNotes")}
         />
-        <TabButton
-  label="Medications"
-  active={activeTab === "medications"}
-  onClick={() => setActiveTab("medications")}
-/>
 
         <TabButton
-  label="Documents"
-  active={activeTab === "documents"}
-  onClick={() => setActiveTab("documents")}
-/>
-<TabButton
-  label="Notifications"
-  active={activeTab === "notifications"}
-  onClick={() => setActiveTab("notifications")}
-/>
+          label="Medications"
+          active={activeTab === "medications"}
+          onClick={() => setActiveTab("medications")}
+        />
 
-<button
-  onClick={() => setActiveTab("care-team")}
-  className={`rounded-xl px-4 py-2 font-semibold ${
-    activeTab === "care-team"
-      ? "bg-blue-600 text-white"
-      : "bg-white text-slate-700"
-  }`}
->
-  Care Team
-</button>
-<button
-  onClick={() => setActiveTab("timeline")}
-  className={`rounded-xl px-4 py-2 font-semibold ${
-    activeTab === "timeline"
-      ? "bg-blue-600 text-white"
-      : "bg-white text-slate-700"
-  }`}
->
-  Timeline
-</button>
-<button
-  onClick={() => setActiveTab("messages")}
-  className={`rounded-xl px-4 py-2 font-semibold ${
-    activeTab === "messages"
-      ? "bg-blue-600 text-white"
-      : "bg-white text-slate-700"
-  }`}
->
-  Messages
-</button>
+        <TabButton
+          label="Documents"
+          active={activeTab === "documents"}
+          onClick={() => setActiveTab("documents")}
+        />
+
+        <TabButton
+          label="Notifications"
+          active={activeTab === "notifications"}
+          onClick={() => setActiveTab("notifications")}
+        />
+
+        <TabButton
+          label="Care Team"
+          active={activeTab === "care-team"}
+          onClick={() => setActiveTab("care-team")}
+        />
+
+        <TabButton
+          label="Timeline"
+          active={activeTab === "timeline"}
+          onClick={() => setActiveTab("timeline")}
+        />
+
+        <TabButton
+          label="Messages"
+          active={activeTab === "messages"}
+          onClick={() => setActiveTab("messages")}
+        />
       </div>
 
       {activeTab === "dashboard" && (
@@ -185,20 +165,13 @@ function FamilyPortalPage() {
       )}
 
       {activeTab === "appointments" && <FamilyAppointmentsTab />}
-
       {activeTab === "visitNotes" && <FamilyVisitNotesTab />}
-
       {activeTab === "documents" && <FamilyDocumentsTab />}
-
       {activeTab === "medications" && <FamilyMedicationsTab />}
       {activeTab === "notifications" && <FamilyNotificationsTab />}
       {activeTab === "timeline" && <FamilyTimelineTab />}
-      {activeTab === "messages" && (
-  <FamilyMessagesTab />
-)}
-      {activeTab === "care-team" && (
-  <FamilyCareTeamTab />
-)}
+      {activeTab === "messages" && <FamilyMessagesTab />}
+      {activeTab === "care-team" && <FamilyCareTeamTab />}
     </div>
   )
 }
