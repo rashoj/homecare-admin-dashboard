@@ -11,8 +11,7 @@ function MessagesPage() {
   const [debugUserId, setDebugUserId] = useState(null)
 
   const user = getUser()
-  const activeUserId = debugUserId || user?.id
-
+const activeUserId = user?.id
   useEffect(() => {
     if (activeUserId) {
       loadConversations()
