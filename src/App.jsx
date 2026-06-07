@@ -31,7 +31,14 @@ import FamilyLoginPage from "./pages/FamilyLoginPage"
 import FamilyPortalPage from "./pages/FamilyPortalPage"
 import MessagesPage from "./pages/MessagesPage"
 
+import PlatformDashboardPage from "./pages/PlatformDashboardPage"
+import PlatformDemoRequestsPage from "./pages/PlatformDemoRequestsPage"
+import PlatformContactRequestsPage from "./pages/PlatformContactRequestsPage"
+
 import AdminLayout from "./components/AdminLayout"
+import PlatformLayout from "./components/PlatformLayout"
+import PlatformOrganizationsPage from "./pages/PlatformOrganizationsPage"
+import PlatformOrganizationDetailsPage from "./pages/PlatformOrganizationDetailsPage"
 
 function App() {
   const [user, setUser] = useState(() => getStoredUser())
@@ -87,9 +94,77 @@ function App() {
         />
 
         <Route
+          path="/platform-dashboard"
+          element={
+            <ProtectedRoute
+              user={user}
+              roles={["PLATFORM_OWNER", "PLATFORM_ADMIN"]}
+            >
+              <PlatformLayout onLogout={handleLogout}>
+                <PlatformDashboardPage />
+              </PlatformLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+  path="/platform/organizations/:id"
+  element={
+    <ProtectedRoute user={user} roles={["PLATFORM_OWNER", "PLATFORM_ADMIN"]}>
+      <PlatformLayout onLogout={handleLogout}>
+        <PlatformOrganizationDetailsPage />
+      </PlatformLayout>
+    </ProtectedRoute>
+  }
+/>
+
+        <Route
+          path="/platform/demo-requests"
+          element={
+            <ProtectedRoute
+              user={user}
+              roles={["PLATFORM_OWNER", "PLATFORM_ADMIN"]}
+            >
+              <PlatformLayout onLogout={handleLogout}>
+                <PlatformDemoRequestsPage />
+              </PlatformLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/platform/contact-requests"
+          element={
+            <ProtectedRoute
+              user={user}
+              roles={["PLATFORM_OWNER", "PLATFORM_ADMIN"]}
+            >
+              <PlatformLayout onLogout={handleLogout}>
+                <PlatformContactRequestsPage />
+              </PlatformLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+  path="/platform/organizations"
+  element={
+    <ProtectedRoute
+      user={user}
+      roles={["PLATFORM_OWNER", "PLATFORM_ADMIN"]}
+    >
+      <PlatformLayout onLogout={handleLogout}>
+        <PlatformOrganizationsPage />
+      </PlatformLayout>
+    </ProtectedRoute>
+  }
+/>
+
+        <Route
           path="/*"
           element={
-            <ProtectedRoute user={user} roles={["ADMIN"]}>
+            <ProtectedRoute
+              user={user}
+              roles={["AGENCY_ADMIN", "SCHEDULER", "SUPERVISOR", "FINANCE", "ADMIN"]}
+            >
               <AdminLayout onLogout={handleLogout}>
                 <Routes>
                   <Route path="/" element={<DashboardPage user={user} />} />
@@ -119,7 +194,6 @@ function App() {
                   <Route path="/authorizations" element={<AuthorizationsPage />} />
                   <Route path="/evv-alerts" element={<EVVAlertsPage />} />
                   <Route path="/evv-exceptions" element={<EVVExceptionsPage />} />
-                 
                 </Routes>
               </AdminLayout>
             </ProtectedRoute>
@@ -146,7 +220,20 @@ function getStoredUser() {
 function getDefaultPath(user) {
   if (!user) return "/"
 
-  if (user.role === "ADMIN") return "/"
+  if (user.role === "PLATFORM_OWNER" || user.role === "PLATFORM_ADMIN") {
+    return "/platform-dashboard"
+  }
+
+  if (
+    user.role === "AGENCY_ADMIN" ||
+    user.role === "SCHEDULER" ||
+    user.role === "SUPERVISOR" ||
+    user.role === "FINANCE" ||
+    user.role === "ADMIN"
+  ) {
+    return "/dashboard"
+  }
+
   if (user.role === "CAREGIVER") return "/caregiver"
   if (user.role === "FAMILY_MEMBER") return "/family-portal"
 
