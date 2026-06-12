@@ -5,6 +5,6 @@ export const getUsers = async () => {
   return response.data
 }
 export async function registerUser(payload) {
-  const response = await api.post("/auth/register", payload)
+  const response = await api.post("/users", payload)
   return response.data
 }
