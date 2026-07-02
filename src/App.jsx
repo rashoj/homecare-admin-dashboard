@@ -30,6 +30,7 @@ import MARReviewPage from "./pages/MARReviewPage"
 import FamilyLoginPage from "./pages/FamilyLoginPage"
 import FamilyPortalPage from "./pages/FamilyPortalPage"
 import MessagesPage from "./pages/MessagesPage"
+import SchedulerBoardPage from "./pages/SchedulerBoardPage"
 
 import PlatformDashboardPage from "./pages/PlatformDashboardPage"
 import PlatformDemoRequestsPage from "./pages/PlatformDemoRequestsPage"
@@ -39,6 +40,7 @@ import AdminLayout from "./components/AdminLayout"
 import PlatformLayout from "./components/PlatformLayout"
 import PlatformOrganizationsPage from "./pages/PlatformOrganizationsPage"
 import PlatformOrganizationDetailsPage from "./pages/PlatformOrganizationDetailsPage"
+import OpenShiftsPage from "./pages/OpenShiftsPage";
 
 function App() {
   const [user, setUser] = useState(() => getStoredUser())
@@ -185,6 +187,8 @@ function App() {
                   <Route path="/reports" element={<ReportsPage />} />
                   <Route path="/compliance" element={<CompliancePage />} />
                   <Route path="/messages" element={<MessagesPage />} />
+                  <Route path="/open-shifts" element={<OpenShiftsPage />} />
+                  <Route path="/scheduler" element={<SchedulerBoardPage />} />
                   <Route
                     path="/service-documentation-review"
                     element={<ServiceDocumentationReviewPage />}

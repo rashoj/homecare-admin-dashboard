@@ -14,7 +14,12 @@ import {
   Activity,
   Siren,
   CheckCircle2,
+  Clock3,
+  TrendingUp,
+  Radio,
+  BarChart3,
 } from "lucide-react"
+
 import {
   LineChart,
   Line,
@@ -37,8 +42,14 @@ import {
   getAdminEVVTrends,
   getAdminRecentActivity,
 } from "../services/dashboardService"
+
 import { getUserNotifications } from "../services/notificationService"
 import { getAdminOperationsSummary } from "../services/adminOperationsDashboardApi"
+import {
+  getFraudSummary,
+  getFraudAlerts,
+  resolveFraudAlert,
+} from "../services/fraudService"
 
 function DashboardPage({ user }) {
   const [dashboard, setDashboard] = useState(null)
@@ -50,6 +61,9 @@ function DashboardPage({ user }) {
   const [incidentSeverityData, setIncidentSeverityData] = useState([])
   const [evvTrendData, setEvvTrendData] = useState([])
   const [recentActivity, setRecentActivity] = useState([])
+
+  const [fraudSummary, setFraudSummary] = useState(null)
+  const [fraudAlerts, setFraudAlerts] = useState([])
 
   useEffect(() => {
     loadDashboard()
@@ -66,6 +80,8 @@ function DashboardPage({ user }) {
         incidentSeverity,
         evvTrends,
         activityData,
+        fraudSummaryData,
+        fraudAlertsData,
       ] = await Promise.all([
         getAdminDashboard(),
         getUserNotifications(user.id),
@@ -75,149 +91,185 @@ function DashboardPage({ user }) {
         getAdminIncidentSeverity(),
         getAdminEVVTrends(),
         getAdminRecentActivity(),
+        getFraudSummary(),
+        getFraudAlerts(),
       ])
 
       setDashboard(dashboardData)
-      setNotifications(notificationData)
+      setNotifications(notificationData || [])
       setOperations(operationsData)
-      setVisitTrendData(visitTrends)
-      setMarTrendData(marTrends)
-      setIncidentSeverityData(incidentSeverity)
-      setEvvTrendData(evvTrends)
-      setRecentActivity(activityData)
-    } catch {
+      setVisitTrendData(visitTrends || [])
+      setMarTrendData(marTrends || [])
+      setIncidentSeverityData(incidentSeverity || [])
+      setEvvTrendData(evvTrends || [])
+      setRecentActivity(activityData || [])
+      setFraudSummary(fraudSummaryData)
+      setFraudAlerts(fraudAlertsData || [])
+    } catch (error) {
+      console.error(error)
       alert("Failed to load dashboard")
+    }
+  }
+
+  async function handleResolveFraudAlert(id) {
+    try {
+      await resolveFraudAlert(id)
+      await loadDashboard()
+    } catch {
+      alert("Failed to resolve fraud alert")
     }
   }
 
   if (!dashboard || !operations) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100">
-        <div className="rounded-3xl bg-white px-8 py-6 text-lg font-semibold text-slate-600 shadow">
-          Loading command center...
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <div className="rounded-3xl bg-white px-8 py-6 text-lg font-semibold text-slate-600 shadow-sm">
+          Loading operations center...
         </div>
       </div>
     )
   }
 
-  const operationsStats = [
-    {
-      title: "Unread EVV Alerts",
-      value: operations.unreadEVVAlerts,
-      subtext: "Requires attention",
-      color: "from-red-500 to-pink-500",
-      icon: <Bell size={24} className="text-white" />,
-    },
-    {
-      title: "Open EVV Issues",
-      value: operations.openEVVExceptions,
-      subtext: "Needs supervisor review",
-      color: "from-yellow-400 to-orange-500",
-      icon: <AlertTriangle size={24} className="text-white" />,
-    },
-    {
-      title: "High Severity EVV",
-      value: operations.highSeverityEVVExceptions,
-      subtext: "Critical compliance risk",
-      color: "from-rose-500 to-red-600",
-      icon: <ShieldAlert size={24} className="text-white" />,
-    },
-    {
-      title: "Caregivers Clocked In",
-      value: operations.caregiversClockedIn,
-      subtext: "Active right now",
-      color: "from-cyan-500 to-blue-500",
-      icon: <UserCheck size={24} className="text-white" />,
-    },
-    {
-      title: "Pending Service Docs",
-      value: operations.pendingServiceDocumentation,
-      subtext: "Awaiting review",
-      color: "from-orange-500 to-amber-500",
-      icon: <FileText size={24} className="text-white" />,
-    },
-    {
-      title: "Payroll Blocked",
-      value: operations.payrollBlockedItems,
-      subtext: "Requires approval",
-      color: "from-slate-700 to-slate-900",
-      icon: <DollarSign size={24} className="text-white" />,
-    },
-  ]
-
-  const stats = [
+  const primaryStats = [
     {
       title: "Total Clients",
       value: dashboard.totalClients,
-      subtext: "Enrolled clients",
-      color: "from-blue-500 to-indigo-500",
-      icon: <Users size={24} className="text-white" />,
+      subtitle: "Enrolled clients",
+      icon: <Users size={26} />,
+      tone: "blue",
     },
     {
       title: "Caregivers",
       value: dashboard.totalCaregivers,
-      subtext: "Active workforce",
-      color: "from-green-500 to-emerald-500",
-      icon: <Users size={24} className="text-white" />,
+      subtitle: "Active workforce",
+      icon: <UserCheck size={26} />,
+      tone: "green",
     },
     {
       title: "Appointments",
       value: dashboard.totalAppointments,
-      subtext: "Scheduled visits",
-      color: "from-purple-500 to-violet-500",
-      icon: <Calendar size={24} className="text-white" />,
+      subtitle: "Scheduled visits",
+      icon: <Calendar size={26} />,
+      tone: "purple",
     },
     {
       title: "Completed Visits",
       value: dashboard.completedAppointments,
-      subtext: "Completed care visits",
-      color: "from-emerald-500 to-teal-500",
-      icon: <ClipboardCheck size={24} className="text-white" />,
+      subtitle: "Completed care visits",
+      icon: <ClipboardCheck size={26} />,
+      tone: "green",
+    },
+  ]
+
+  const liveOpsStats = [
+    {
+      title: "Clocked In",
+      value: operations.caregiversClockedIn,
+      subtitle: "Caregivers active now",
+      icon: <Radio size={26} />,
+      tone: "blue",
     },
     {
-      title: "Open Incidents",
-      value: dashboard.openIncidents,
-      subtext: "Supervisor review",
-      color: "from-red-500 to-rose-600",
-      icon: <ShieldAlert size={24} className="text-white" />,
+      title: "EVV Alerts",
+      value: operations.unreadEVVAlerts,
+      subtitle: "Unread alerts",
+      icon: <Bell size={26} />,
+      tone: "red",
     },
     {
-      title: "Missed Visits",
-      value: dashboard.missedAppointments,
-      subtext: "Operational review",
-      color: "from-yellow-500 to-orange-500",
-      icon: <AlertTriangle size={24} className="text-white" />,
+      title: "EVV Exceptions",
+      value: operations.openEVVExceptions,
+      subtitle: "Needs review",
+      icon: <AlertTriangle size={26} />,
+      tone: "orange",
+    },
+    {
+      title: "Payroll Blocked",
+      value: operations.payrollBlockedItems,
+      subtitle: "Requires approval",
+      icon: <DollarSign size={26} />,
+      tone: "slate",
+    },
+  ]
+
+  const complianceStats = [
+    {
+      title: "Pending Service Docs",
+      value: operations.pendingServiceDocumentation,
+      subtitle: "Awaiting review",
+      icon: <FileText size={26} />,
+      tone: "orange",
     },
     {
       title: "Pending Documents",
       value: dashboard.pendingDocuments,
-      subtext: "Awaiting approval",
-      color: "from-indigo-500 to-blue-600",
-      icon: <FileText size={24} className="text-white" />,
+      subtitle: "Awaiting approval",
+      icon: <FileText size={26} />,
+      tone: "blue",
+    },
+    {
+      title: "Open Incidents",
+      value: dashboard.openIncidents,
+      subtitle: "Supervisor review",
+      icon: <ShieldAlert size={26} />,
+      tone: "red",
     },
     {
       title: "MAR Compliance",
       value: `${dashboard.marComplianceRate ?? 0}%`,
-      subtext: "Medication compliance",
-      color: "from-emerald-500 to-green-600",
-      icon: <Pill size={24} className="text-white" />,
+      subtitle: "Medication compliance",
+      icon: <Pill size={26} />,
+      tone: "green",
+    },
+  ]
+
+  const fraudStats = [
+    {
+      title: "Open Fraud Alerts",
+      value: fraudSummary?.openAlerts ?? 0,
+      subtitle: "Needs investigation",
+      icon: <ShieldAlert size={26} />,
+      tone: "red",
+    },
+    {
+      title: "High Risk Alerts",
+      value: fraudSummary?.highAlerts ?? 0,
+      subtitle: "Compliance exposure",
+      icon: <AlertTriangle size={26} />,
+      tone: "orange",
+    },
+    {
+      title: "Critical Alerts",
+      value: fraudSummary?.criticalAlerts ?? 0,
+      subtitle: "Immediate review",
+      icon: <Siren size={26} />,
+      tone: "red",
+    },
+    {
+      title: "Fraud Risk Score",
+      value: fraudSummary?.totalRiskScore ?? 0,
+      subtitle: "Organization exposure",
+      icon: <Activity size={26} />,
+      tone: "purple",
     },
   ]
 
   return (
-    <div className="min-h-screen bg-slate-100 p-8">
-      <div className="mb-8 rounded-[2rem] bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 p-8 text-white shadow-2xl">
+    <div className="space-y-8">
+      <div className="overflow-hidden rounded-[2rem] bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 p-8 text-white shadow-2xl">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.25em] text-blue-300">
-              Agency Command Center
+            <p className="mb-2 text-sm font-bold uppercase tracking-[0.25em] text-blue-300">
+              CareBridge Operations Center
             </p>
+
             <h1 className="text-5xl font-black tracking-tight">
-              Good morning, {user.fullName || "Admin"} 👋
+              Good morning, {user?.fullName || "Admin"} 👋
             </h1>
+
             <p className="mt-3 max-w-3xl text-lg text-slate-300">
-              Real-time care operations, compliance, billing, EVV, documentation,
-              and agency risk in one place.
+              Real-time agency operations, staffing, EVV, compliance, fraud,
+              documentation, and billing risk in one command center.
             </p>
           </div>
 
@@ -240,40 +292,151 @@ function DashboardPage({ user }) {
             </div>
           </div>
         </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <HeroMiniStat
+            label="Agency Health"
+            value={getAgencyHealth(dashboard, operations, fraudSummary)}
+          />
+          <HeroMiniStat
+            label="Missed Visits"
+            value={dashboard.missedAppointments ?? 0}
+          />
+          <HeroMiniStat
+            label="High Severity EVV"
+            value={operations.highSeverityEVVExceptions ?? 0}
+          />
+          <HeroMiniStat
+            label="Notifications"
+            value={notifications.filter((item) => !item.isRead).length}
+          />
+        </div>
       </div>
+
+      <SectionHeader
+        title="Agency Snapshot"
+        subtitle="Core volume, staffing, and care delivery numbers."
+        icon={<BarChart3 size={22} />}
+      />
+
+      <CardGrid>
+        {primaryStats.map((item) => (
+          <MetricCard key={item.title} item={item} />
+        ))}
+      </CardGrid>
 
       <SectionHeader
         title="Live Operations"
-        subtitle="Real-time EVV, documentation, and payroll blockers."
+        subtitle="Real-time operational issues that need agency attention."
         icon={<Activity size={22} />}
       />
 
-      <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {operationsStats.map((item) => (
-          <ModernCard key={item.title} item={item} />
+      <CardGrid>
+        {liveOpsStats.map((item) => (
+          <MetricCard key={item.title} item={item} />
         ))}
+      </CardGrid>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <Panel title="Today’s Operational Pulse" className="xl:col-span-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <PulseRow
+              label="Caregivers Clocked In"
+              value={operations.caregiversClockedIn}
+              status="Live"
+              good
+            />
+            <PulseRow
+              label="Open EVV Exceptions"
+              value={operations.openEVVExceptions}
+              status="Review"
+              good={(operations.openEVVExceptions ?? 0) === 0}
+            />
+            <PulseRow
+              label="Pending Service Docs"
+              value={operations.pendingServiceDocumentation}
+              status="Queue"
+              good={(operations.pendingServiceDocumentation ?? 0) === 0}
+            />
+            <PulseRow
+              label="Payroll Blockers"
+              value={operations.payrollBlockedItems}
+              status="Finance"
+              good={(operations.payrollBlockedItems ?? 0) === 0}
+            />
+          </div>
+        </Panel>
+
+        <Panel title="Compliance Status">
+          <div className="space-y-4">
+            <StatusRow label="EVV Monitoring" value="Active" good />
+            <StatusRow
+              label="Medication Compliance"
+              value={`${dashboard.marComplianceRate ?? 0}%`}
+              good={(dashboard.marComplianceRate ?? 0) >= 80}
+            />
+            <StatusRow
+              label="Open Incidents"
+              value={dashboard.openIncidents ?? 0}
+              good={(dashboard.openIncidents ?? 0) === 0}
+            />
+            <StatusRow
+              label="Payroll Blocking Issues"
+              value={operations.payrollBlockedItems ?? 0}
+              good={(operations.payrollBlockedItems ?? 0) === 0}
+            />
+          </div>
+        </Panel>
       </div>
 
       <SectionHeader
-        title="Agency Metrics"
-        subtitle="Core care delivery, staffing, compliance, and documentation numbers."
+        title="Fraud Intelligence"
+        subtitle="Suspicious activity, visit anomalies, and fraud risk exposure."
+        icon={<ShieldAlert size={22} />}
+      />
+
+      <CardGrid>
+        {fraudStats.map((item) => (
+          <MetricCard key={item.title} item={item} />
+        ))}
+      </CardGrid>
+
+      <Panel title="Fraud Alert Feed">
+        <div className="space-y-4">
+          {fraudAlerts.length > 0 ? (
+            fraudAlerts.slice(0, 5).map((alert) => (
+              <FraudAlertCard
+                key={alert.id}
+                alert={alert}
+                onResolve={handleResolveFraudAlert}
+              />
+            ))
+          ) : (
+            <EmptyState text="No open fraud alerts." />
+          )}
+        </div>
+      </Panel>
+
+      <SectionHeader
+        title="Compliance & Documentation"
+        subtitle="Clinical documentation, incidents, medication, and approval queues."
         icon={<ClipboardCheck size={22} />}
       />
 
-      <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((item) => (
-          <ModernCard key={item.title} item={item} />
+      <CardGrid>
+        {complianceStats.map((item) => (
+          <MetricCard key={item.title} item={item} />
         ))}
-      </div>
+      </CardGrid>
 
       <SectionHeader
         title="Operational Analytics"
         subtitle="Live charts powered by backend data."
-        icon={<Activity size={22} />}
+        icon={<TrendingUp size={22} />}
       />
 
-      <div className="mb-10 grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <ChartCard title="Visit Completion Trend">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <ChartPanel title="Visit Completion Trend">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={visitTrendData}>
               <XAxis dataKey="label" />
@@ -283,25 +446,20 @@ function DashboardPage({ user }) {
               <Bar dataKey="missed" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </ChartPanel>
 
-        <ChartCard title="MAR Compliance Trend">
+        <ChartPanel title="MAR Compliance Trend">
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={marTrendData}>
               <XAxis dataKey="label" />
               <YAxis domain={[0, 100]} />
               <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="rate"
-                strokeWidth={4}
-                dot={{ r: 5 }}
-              />
+              <Line type="monotone" dataKey="rate" strokeWidth={4} dot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </ChartPanel>
 
-        <ChartCard title="Incidents by Severity">
+        <ChartPanel title="Incidents by Severity">
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie
@@ -319,9 +477,9 @@ function DashboardPage({ user }) {
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </ChartPanel>
 
-        <ChartCard title="EVV Exceptions Trend">
+        <ChartPanel title="EVV Exceptions Trend">
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={evvTrendData}>
               <XAxis dataKey="label" />
@@ -335,18 +493,14 @@ function DashboardPage({ user }) {
               />
             </LineChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </ChartPanel>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="rounded-3xl bg-white p-8 shadow-sm xl:col-span-2">
-          <h2 className="mb-6 text-2xl font-bold text-slate-900">
-            Recent Audit Activity
-          </h2>
-
-          <div className="space-y-5">
+        <Panel title="Recent Audit Activity" className="xl:col-span-2">
+          <div className="space-y-4">
             {recentActivity.length > 0 ? (
-              recentActivity.map((activity) => (
+              recentActivity.slice(0, 8).map((activity) => (
                 <ActivityItem
                   key={activity.id}
                   color={getActivityColor(activity.action)}
@@ -357,105 +511,166 @@ function DashboardPage({ user }) {
                 />
               ))
             ) : (
-              <p className="text-slate-500">No recent activity found.</p>
+              <EmptyState text="No recent activity found." />
             )}
           </div>
-        </div>
+        </Panel>
 
-        <div>
-          <div className="rounded-3xl bg-white p-8 shadow-sm">
-            <h2 className="mb-6 text-2xl font-bold text-slate-900">
-              Notifications
-            </h2>
-
-            <div className="space-y-4">
-              {notifications.length > 0 ? (
-                notifications.map((notification) => (
-                  <NotificationItem
-                    key={notification.id}
-                    title={notification.title}
-                    message={notification.message}
-                    isRead={notification.isRead}
-                  />
-                ))
-              ) : (
-                <p className="text-slate-500">No notifications found.</p>
-              )}
-            </div>
+        <Panel title="Notifications">
+          <div className="space-y-4">
+            {notifications.length > 0 ? (
+              notifications.slice(0, 6).map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  title={notification.title}
+                  message={notification.message}
+                  isRead={notification.isRead}
+                />
+              ))
+            ) : (
+              <EmptyState text="No notifications found." />
+            )}
           </div>
-
-          <div className="mt-6 rounded-3xl bg-slate-900 p-8 text-white shadow-xl">
-            <div className="mb-6 flex items-center gap-3">
-              <Siren size={24} className="text-red-400" />
-              <h2 className="text-2xl font-bold">
-                Compliance Status
-              </h2>
-            </div>
-
-            <div className="space-y-5">
-              <StatusRow label="EVV Monitoring" value="Active" good />
-              <StatusRow
-                label="Medication Compliance"
-                value={`${dashboard.marComplianceRate ?? 0}%`}
-                good={(dashboard.marComplianceRate ?? 0) >= 80}
-              />
-              <StatusRow
-                label="Open Incidents"
-                value={dashboard.openIncidents ?? 0}
-                good={(dashboard.openIncidents ?? 0) === 0}
-              />
-              <StatusRow
-                label="Pending Documentation"
-                value={dashboard.pendingServiceDocumentation ?? 0}
-                good={(dashboard.pendingServiceDocumentation ?? 0) === 0}
-              />
-              <StatusRow
-                label="Payroll Blocking Issues"
-                value={operations.payrollBlockedItems ?? 0}
-                good={(operations.payrollBlockedItems ?? 0) === 0}
-              />
-            </div>
-          </div>
-        </div>
+        </Panel>
       </div>
+    </div>
+  )
+}
+
+function CardGrid({ children }) {
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+      {children}
+    </div>
+  )
+}
+
+function HeroMiniStat({ label, value }) {
+  return (
+    <div className="rounded-2xl bg-white/10 p-5 backdrop-blur">
+      <p className="text-sm font-semibold text-slate-300">{label}</p>
+      <p className="mt-2 text-3xl font-black text-white">{value}</p>
+    </div>
+  )
+}
+
+function MetricCard({ item }) {
+  const tones = {
+    blue: "bg-blue-100 text-blue-700",
+    green: "bg-green-100 text-green-700",
+    purple: "bg-purple-100 text-purple-700",
+    orange: "bg-orange-100 text-orange-700",
+    red: "bg-red-100 text-red-700",
+    slate: "bg-slate-100 text-slate-700",
+  }
+
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+      <div
+        className={`mb-5 flex h-16 w-16 items-center justify-center rounded-2xl ${
+          tones[item.tone] || tones.blue
+        }`}
+      >
+        {item.icon}
+      </div>
+
+      <p className="text-sm font-semibold text-slate-500">{item.title}</p>
+      <h3 className="mt-3 text-4xl font-black tracking-tight text-slate-900">
+        {item.value ?? 0}
+      </h3>
+      <p className="mt-3 text-sm text-slate-500">{item.subtitle}</p>
     </div>
   )
 }
 
 function SectionHeader({ title, subtitle, icon }) {
   return (
-    <div className="mb-5 flex items-center gap-3">
+    <div className="flex items-center gap-3">
       <div className="text-blue-600">{icon}</div>
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
+        <h2 className="text-2xl font-black text-slate-900">{title}</h2>
         <p className="text-slate-500">{subtitle}</p>
       </div>
     </div>
   )
 }
 
-function ModernCard({ item }) {
+function Panel({ title, children, className = "" }) {
   return (
-    <div className="group rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-      <div
-        className={`mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-r ${item.color} shadow-lg transition group-hover:scale-105`}
-      >
-        {item.icon}
-      </div>
-      <p className="text-sm font-medium text-slate-500">{item.title}</p>
-      <h3 className="mt-3 text-5xl font-black tracking-tight text-slate-900">
-        {item.value ?? 0}
-      </h3>
-      <p className="mt-3 text-sm text-slate-500">{item.subtext}</p>
+    <div className={`rounded-3xl border border-slate-200 bg-white p-6 shadow-sm ${className}`}>
+      <h2 className="mb-5 text-2xl font-black text-slate-900">{title}</h2>
+      {children}
     </div>
   )
 }
 
-function ChartCard({ title, children }) {
+function ChartPanel({ title, children }) {
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
-      <h3 className="mb-5 text-xl font-bold text-slate-900">{title}</h3>
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h3 className="mb-5 text-xl font-black text-slate-900">{title}</h3>
       {children}
+    </div>
+  )
+}
+
+function PulseRow({ label, value, status, good }) {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+      <div className="flex items-center justify-between">
+        <p className="font-bold text-slate-800">{label}</p>
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-black ${
+            good ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+          }`}
+        >
+          {status}
+        </span>
+      </div>
+      <p className="mt-4 text-4xl font-black text-slate-900">{value ?? 0}</p>
+    </div>
+  )
+}
+
+function FraudAlertCard({ alert, onResolve }) {
+  return (
+    <div className="rounded-2xl border border-red-100 bg-red-50 p-5">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div>
+          <h4 className="font-black text-slate-900">{alert.title}</h4>
+
+          <p className="mt-1 text-sm text-slate-600">
+            {alert.caregiverName || "Unknown caregiver"} →{" "}
+            {alert.clientName || "Unknown client"}
+          </p>
+
+          <p className="mt-2 text-sm text-slate-500">{alert.description}</p>
+
+          <p className="mt-2 text-xs font-semibold text-slate-500">
+            Visit #{alert.visitId} •{" "}
+            {alert.detectedAt
+              ? new Date(alert.detectedAt).toLocaleString()
+              : "Unknown time"}
+          </p>
+        </div>
+
+        <div className="text-left xl:text-right">
+          <div className="font-black text-red-600">{alert.severity}</div>
+          <div className="text-sm font-semibold text-slate-700">
+            Risk {alert.riskScore}
+          </div>
+
+          <div className="mt-2 rounded-full bg-white px-3 py-1 text-xs font-bold text-red-600">
+            {alert.alertType}
+          </div>
+
+          <button
+            onClick={() => onResolve(alert.id)}
+            className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-700"
+          >
+            Resolve
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -466,7 +681,7 @@ function ActivityItem({ title, description, color }) {
       <div className={`mt-1 h-4 w-4 rounded-full ${color}`} />
       <div>
         <h4 className="font-bold text-slate-900">{title}</h4>
-        <p className="mt-1 text-slate-500">{description}</p>
+        <p className="mt-1 text-sm text-slate-500">{description}</p>
       </div>
     </div>
   )
@@ -477,7 +692,12 @@ function NotificationItem({ title, message, isRead }) {
     <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
       <h4 className="font-bold text-slate-900">{title}</h4>
       <p className="mt-2 text-sm text-slate-500">{message}</p>
-      <span className="mt-3 inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+
+      <span
+        className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-bold ${
+          isRead ? "bg-slate-100 text-slate-600" : "bg-blue-100 text-blue-700"
+        }`}
+      >
         {isRead ? "Read" : "New"}
       </span>
     </div>
@@ -486,18 +706,40 @@ function NotificationItem({ title, message, isRead }) {
 
 function StatusRow({ label, value, good }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl bg-white/5 px-5 py-4">
+    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-5 py-4">
       <div className="flex items-center gap-3">
         {good ? (
-          <CheckCircle2 size={18} className="text-green-400" />
+          <CheckCircle2 size={18} className="text-green-500" />
         ) : (
-          <AlertTriangle size={18} className="text-orange-400" />
+          <AlertTriangle size={18} className="text-orange-500" />
         )}
-        <span className="font-medium text-slate-200">{label}</span>
+
+        <span className="font-semibold text-slate-700">{label}</span>
       </div>
-      <span className="font-bold text-white">{value}</span>
+
+      <span className="font-black text-slate-900">{value}</span>
     </div>
   )
+}
+
+function EmptyState({ text }) {
+  return (
+    <div className="rounded-2xl bg-slate-50 p-6 text-sm font-semibold text-slate-500">
+      {text}
+    </div>
+  )
+}
+
+function getAgencyHealth(dashboard, operations, fraudSummary) {
+  let score = 100
+
+  if ((operations.openEVVExceptions ?? 0) > 0) score -= 10
+  if ((operations.payrollBlockedItems ?? 0) > 0) score -= 10
+  if ((dashboard.openIncidents ?? 0) > 0) score -= 10
+  if ((fraudSummary?.openAlerts ?? 0) > 0) score -= 10
+  if ((dashboard.marComplianceRate ?? 100) < 80) score -= 10
+
+  return `${Math.max(score, 0)}%`
 }
 
 function formatAction(action) {
@@ -511,23 +753,10 @@ function formatAction(action) {
 
 function getActivityColor(action) {
   if (!action) return "bg-slate-500"
-
-  if (action.includes("PAID") || action.includes("APPROVE")) {
-    return "bg-green-500"
-  }
-
-  if (action.includes("DENY") || action.includes("VOID") || action.includes("INCIDENT")) {
-    return "bg-red-500"
-  }
-
-  if (action.includes("BILLING") || action.includes("CLAIM")) {
-    return "bg-blue-500"
-  }
-
-  if (action.includes("TIMESHEET") || action.includes("CLOCK")) {
-    return "bg-orange-500"
-  }
-
+  if (action.includes("PAID") || action.includes("APPROVE")) return "bg-green-500"
+  if (action.includes("DENY") || action.includes("VOID") || action.includes("INCIDENT")) return "bg-red-500"
+  if (action.includes("BILLING") || action.includes("CLAIM")) return "bg-blue-500"
+  if (action.includes("TIMESHEET") || action.includes("CLOCK")) return "bg-orange-500"
   return "bg-indigo-500"
 }
 

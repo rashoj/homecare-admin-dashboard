@@ -26,3 +26,12 @@ export async function getAppointmentById(id) {
   const response = await api.get(`/appointments/${id}`)
   return response.data
 }
+
+export const assignCaregiverToAppointment = async (appointmentId, payload) => {
+  const response = await api.put(
+    `/appointments/${appointmentId}/assign-caregiver`,
+    payload
+  )
+
+  return response.data
+}
