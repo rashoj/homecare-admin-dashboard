@@ -41,6 +41,7 @@ import PlatformLayout from "./components/PlatformLayout"
 import PlatformOrganizationsPage from "./pages/PlatformOrganizationsPage"
 import PlatformOrganizationDetailsPage from "./pages/PlatformOrganizationDetailsPage"
 import OpenShiftsPage from "./pages/OpenShiftsPage";
+import AIOperationsCenterPage from "./pages/AIOperationsCenterPage"
 
 function App() {
   const [user, setUser] = useState(() => getStoredUser())
@@ -175,6 +176,10 @@ function App() {
                   <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
                   <Route path="/caregivers" element={<CaregiversPage />} />
                   <Route path="/caregivers/:id" element={<CaregiverDetailsPage />} />
+                  <Route
+  path="/ai-operations-center"
+  element={<AIOperationsCenterPage />}
+/>
                   <Route path="/appointments" element={<AppointmentsPage />} />
                   <Route path="/documents" element={<DocumentsPage />} />
                   <Route path="/medications" element={<MedicationsPage />} />
@@ -186,6 +191,7 @@ function App() {
                   <Route path="/billing-payroll" element={<BillingPayrollPage />} />
                   <Route path="/reports" element={<ReportsPage />} />
                   <Route path="/compliance" element={<CompliancePage />} />
+                  <Route path="/ai-operations-center" element={<AIOperationsCenterPage />} />
                   <Route path="/messages" element={<MessagesPage />} />
                   <Route path="/open-shifts" element={<OpenShiftsPage />} />
                   <Route path="/scheduler" element={<SchedulerBoardPage />} />
@@ -198,6 +204,7 @@ function App() {
                   <Route path="/authorizations" element={<AuthorizationsPage />} />
                   <Route path="/evv-alerts" element={<EVVAlertsPage />} />
                   <Route path="/evv-exceptions" element={<EVVExceptionsPage />} />
+
                 </Routes>
               </AdminLayout>
             </ProtectedRoute>

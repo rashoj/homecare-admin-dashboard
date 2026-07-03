@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 
 import { NavLink } from "react-router-dom"
+import AICopilotWidget from "./ai/AICopilotWidget"
 
 function AdminLayout({ children, onLogout }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -116,7 +117,9 @@ function AdminLayout({ children, onLogout }) {
             <SidebarLink collapsed={collapsed} to="/visit-notes" icon={<ClipboardCheck size={20} />} text="Visit Notes" />
             <SidebarLink collapsed={collapsed} to="/service-documentation-review" icon={<ClipboardList size={20} />} text="Service Docs" />
             <SidebarLink collapsed={collapsed} to="/mar-review" icon={<Stethoscope size={20} />} text="MAR Review" />
+            <SidebarLink collapsed={collapsed} to="/ai-operations-center" icon={<Activity size={18} />} text="AI Operations"/>
             <SidebarLink collapsed={collapsed} to="/incidents" icon={<AlertTriangle size={20} />} text="Incidents" />
+   
 
             <Divider collapsed={collapsed} />
 
@@ -187,6 +190,7 @@ function AdminLayout({ children, onLogout }) {
         </header>
 
         <main className="flex-1 p-8">{children}</main>
+        <AICopilotWidget />
       </div>
     </div>
   )
