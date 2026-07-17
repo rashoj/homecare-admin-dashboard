@@ -35,3 +35,22 @@ export async function reviewTimesheet(id, payload) {
 
   return response.json()
 }
+export async function generateTimesheetFromClockRecord(clockRecordId) {
+  const token = getToken()
+
+  const response = await fetch(
+    `${API_BASE_URL}/timesheets/generate/clock-record/${clockRecordId}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to generate timesheet.")
+  }
+
+  return response.json()
+}

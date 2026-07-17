@@ -41,27 +41,14 @@ function AIOperationsCenterPage() {
     }
   }
 
-  const executiveBrief = useMemo(() => {
-    if (!data) return ""
+ const executiveBrief = useMemo(() => {
+  if (!data) return ""
 
-    if (data.health?.tone === "red") {
-      return "CareBridge detected elevated operational risk today. Focus first on high-severity EVV exceptions, unread alerts, and state-reportable incidents."
-    }
-
-    if (data.health?.tone === "orange") {
-      return "Operations need supervisor attention. Review staffing, EVV exceptions, and incident activity before closing the day."
-    }
-
-    if (data.openShifts?.openShifts > 0) {
-      return "Operations are mostly stable, but staffing coverage should be reviewed because open shifts remain."
-    }
-
-    if (data.evv?.openExceptions > 0) {
-      return "Operations are stable, but EVV exceptions should be cleared before payroll and billing workflows continue."
-    }
-
-    return "Operations appear stable based on current live agency data."
-  }, [data])
+  return (
+    data.executiveBrief ||
+    "CareBridge could not generate an AI executive brief right now."
+  )
+}, [data])
 
   if (loading) {
     return (

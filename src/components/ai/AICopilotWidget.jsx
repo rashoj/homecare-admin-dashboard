@@ -20,51 +20,75 @@ function AICopilotWidget() {
     },
   ])
 
-  async function sendMessage(messageText) {
-    const message = messageText || input
+ async function sendMessage(messageText) {
+  const message = messageText || input
 
-    if (!message.trim() || loading) return
+  if (!message.trim() || loading) {
+    return
+  }
+
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "user",
+      content: message,
+    },
+  ])
+
+  setInput("")
+  setLoading(true)
+
+  try {
+    const data = await askCareBridgeAI(message)
 
     setMessages((prev) => [
       ...prev,
       {
-        role: "user",
-        content: message,
+        role: "assistant",
+        content:
+          data.answer ||
+          "I could not generate a response.",
+
+        cards: Array.isArray(data.cards)
+          ? data.cards
+          : [],
+
+        actions: Array.isArray(data.actions)
+          ? data.actions
+          : [],
+
+        details: Array.isArray(data.details)
+          ? data.details
+          : [],
+
+        category: data.category || null,
+
+        severity: data.severity || null,
       },
     ])
+  } catch (error) {
+    console.error(
+      "CareBridge Copilot request failed:",
+      error
+    )
 
-    setInput("")
-    setLoading(true)
-
-    try {
-      const data = await askCareBridgeAI(message)
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: data.answer || "I could not generate a response.",
-          cards: data.cards || [],
-          actions: data.actions || [],
-        },
-      ])
-    } catch (error) {
-      console.error(error)
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "I’m having trouble connecting to CareBridge AI right now. Please try again.",
-          cards: [],
-          actions: [],
-        },
-      ])
-    } finally {
-      setLoading(false)
-    }
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content:
+          "I’m having trouble connecting to CareBridge AI right now. Please try again.",
+        cards: [],
+        actions: [],
+        details: [],
+        category: null,
+        severity: null,
+      },
+    ])
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <>
